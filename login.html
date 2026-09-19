@@ -3,130 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AEGIS-X // Autonomous Cyber Defense Platform</title>
+  <title>SENTINEL AI - Secure Authentication</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background-color: #090a0f; }
-    .carbon-panel {
-      background: linear-gradient(145deg, #0d0f17 0%, #06070b 100%);
-      border: 1px solid rgba(99, 102, 241, 0.2);
-    }
-    .grid-pattern {
-      background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-    .neon-border {
-      box-shadow: 0 0 35px rgba(99, 102, 241, 0.25);
+    body { background: radial-gradient(circle at center, #071520 0%, #030712 100%); }
+    .glass-card {
+      background: rgba(13, 23, 38, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(52, 211, 153, 0.25);
     }
   </style>
 </head>
-<body class="text-slate-200 min-h-screen flex items-center justify-center p-4 lg:p-8 font-sans">
+<body class="text-slate-100 flex items-center justify-center min-h-screen p-4 font-sans">
 
-  <!-- Main Container: Split-Screen Layout -->
-  <div class="w-full max-w-5xl rounded-3xl carbon-panel neon-border overflow-hidden grid grid-cols-1 lg:grid-cols-12 shadow-2xl">
+  <div class="glass-card w-full max-w-md rounded-2xl p-8 shadow-2xl relative z-10">
     
-    <!-- LEFT SIDE: Live Threat Visualizer & Telemetry -->
-    <div class="lg:col-span-6 p-8 lg:p-12 border-b lg:border-b-0 lg:border-r border-indigo-950/60 flex flex-col justify-between relative grid-pattern">
-      <div class="relative z-10">
-        <!-- Logo -->
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-mono font-bold tracking-widest uppercase mb-6">
-          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-          AEGIS-X DEFENSE ENGINE v4.2
-        </div>
-
-        <h1 class="text-3xl lg:text-4xl font-black tracking-tight text-white uppercase">
-          Autonomous <span class="text-indigo-400">Threat</span> Intelligence
-        </h1>
-        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-          Zero-Trust Security Mesh featuring automated packet inspection, MITRE ATT&CK event correlation, and multi-channel incident alerting.
-        </p>
-      </div>
-
-      <!-- Live Network Metric Visualizer -->
-      <div class="my-8 relative z-10 space-y-3">
-        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-            <div>
-              <p class="text-[11px] font-bold text-white uppercase tracking-wider">Active Attack Vector</p>
-              <p class="text-[10px] text-slate-400 font-mono">DDoS Layer-7 & Credential Stuffing</p>
-            </div>
-          </div>
-          <span class="text-xs font-mono font-bold text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-900">SEV-1 CRITICAL</span>
-        </div>
-
-        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-white uppercase tracking-wider">AI Neural Model</p>
-            <p class="text-[10px] text-slate-400 font-mono">Inference Latency: 1.4ms • 99.4% F1-Score</p>
-          </div>
-          <span class="text-xs font-mono font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900">ONLINE</span>
-        </div>
-      </div>
-
-      <!-- Compliance Notice -->
-      <div class="text-[10px] font-mono text-slate-500 relative z-10">
-        ENCRYPTION: AES-GCM-256 • PROTOCOL: ZERO-TRUST SIGMA-4
+    <!-- Shield Logo -->
+    <div class="flex justify-center mb-4">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-400 flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.5)]">
+        <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+        </svg>
       </div>
     </div>
 
-    <!-- RIGHT SIDE: Authentication Portal -->
-    <div class="lg:col-span-6 p-8 lg:p-12 flex flex-col justify-center bg-slate-950/70">
-      <div class="mb-6">
-        <h2 class="text-xl font-bold text-white">Operator Authentication</h2>
-        <p class="text-xs text-slate-400 mt-1">Provide your cryptographic credentials to enter the SOC.</p>
-      </div>
-
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Operator ID</label>
-          <input type="text" id="username" value="analyst1" required 
-            class="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-mono">
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Master Passkey</label>
-          <input type="password" id="password" value="Sentinel2026!" required 
-            class="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-mono">
-        </div>
-
-        <div class="space-y-2 pt-2">
-          <button type="submit" id="authBtn"
-            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold rounded-xl text-xs tracking-wider uppercase transition shadow-lg shadow-indigo-600/30">
-            Authorize Console Session
-          </button>
-
-          <!-- Direct Bypass Mode -->
-          <button type="button" onclick="directAccess()"
-            class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-semibold rounded-xl text-xs tracking-wider uppercase transition border border-slate-800">
-            Instant Demo Bypass ➔
-          </button>
-        </div>
-      </form>
-
-      <div id="statusBox" class="mt-4 hidden p-3 rounded-xl text-xs border"></div>
+    <div class="text-center mb-6">
+      <h1 class="text-xl font-black text-white uppercase">SENTINEL AI</h1>
+      <p class="text-[11px] text-emerald-400 font-mono tracking-wider uppercase mt-0.5">Bcrypt & JWT Protected Access</p>
     </div>
 
+    <!-- Tab Toggle: Sign In vs Register -->
+    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 border border-slate-800 rounded-xl mb-6 text-xs font-bold">
+      <button id="tabLogin" onclick="showTab('login')" class="py-2 rounded-lg bg-emerald-500 text-slate-950 transition">
+        Sign In
+      </button>
+      <button id="tabRegister" onclick="showTab('register')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">
+        Register Analyst
+      </button>
+    </div>
+
+    <!-- 1. LOGIN FORM -->
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Analyst Handle</label>
+        <input type="text" id="loginUsername" value="analyst1" required 
+          class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Passkey</label>
+        <input type="password" id="loginPassword" value="Sentinel2026!" required 
+          class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+      </div>
+
+      <button type="submit" id="loginBtn"
+        class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-emerald-500/20">
+        Authenticate & Issue JWT
+      </button>
+    </form>
+
+    <!-- 2. REGISTER FORM -->
+    <form id="registerForm" class="space-y-3 hidden">
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Username</label>
+        <input type="text" id="regUsername" placeholder="muskan" required 
+          class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</label>
+        <input type="email" id="regEmail" placeholder="muskan@sentinelai.com" required 
+          class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Password (min 8 chars)</label>
+        <input type="password" id="regPassword" placeholder="••••••••" required 
+          class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">SOC Role</label>
+        <select id="regRole" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+          <option value="Lead Cybersecurity Analyst">Lead Cybersecurity Analyst</option>
+          <option value="Incident Commander">Incident Commander</option>
+          <option value="SOC Tier-2 Investigator">SOC Tier-2 Investigator</option>
+        </select>
+      </div>
+
+      <button type="submit" id="regBtn"
+        class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-indigo-600/30">
+        Create & Hash into Database
+      </button>
+    </form>
+
+    <div id="statusBox" class="mt-4 hidden p-3 rounded-lg text-xs border"></div>
+
+    <div class="mt-6 pt-4 border-t border-slate-800 text-center text-[10px] text-slate-500 font-mono">
+      STORAGE: SQLite (sentinel.db) • HASH: Bcrypt 12-Rounds • TOKEN: HS256
+    </div>
   </div>
 
   <script>
-    function directAccess() {
-      sessionStorage.setItem('token', 'aegis-token-demo');
-      sessionStorage.setItem('operator_name', 'COMMANDER V. REYES');
-      window.location.href = window.location.protocol === 'file:' ? 'dashboard.html' : '/dashboard';
+    function showTab(tab) {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+      const statusBox = document.getElementById('statusBox');
+      statusBox.classList.add('hidden');
+
+      if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        tabLogin.className = "py-2 rounded-lg bg-emerald-500 text-slate-950 transition";
+        tabRegister.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+      } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        tabRegister.className = "py-2 rounded-lg bg-indigo-600 text-white transition";
+        tabLogin.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+      }
     }
 
-    const form = document.getElementById('loginForm');
-    const statusBox = document.getElementById('statusBox');
-    const authBtn = document.getElementById('authBtn');
-
-    form.addEventListener('submit', async (e) => {
+    // Handle Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      authBtn.innerText = "VERIFYING CRYPTOGRAPHIC KEY...";
-      authBtn.disabled = true;
-
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const statusBox = document.getElementById('statusBox');
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -134,25 +140,57 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-
         const data = await res.json();
 
         if (res.ok) {
+          // Store JWT token
           sessionStorage.setItem('token', data.access_token);
-          sessionStorage.setItem('operator_name', data.operator_name || 'V. REYES');
-          statusBox.innerHTML = `<b>CLEARANCE GRANTED:</b> Welcome, ${data.operator_name}. Initializing AEGIS Grid...`;
-          statusBox.className = "mt-4 block p-3 rounded-xl text-xs border border-indigo-500/40 bg-indigo-950/40 text-indigo-300";
+          sessionStorage.setItem('user_role', data.user.role);
+          sessionStorage.setItem('username', data.user.username);
+
+          statusBox.innerHTML = `<b>AUTHENTICATED:</b> JWT issued for <b>${data.user.username}</b> (${data.user.role}). Redirecting...`;
+          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
           setTimeout(() => { window.location.href = "/dashboard"; }, 900);
         } else {
-          statusBox.innerHTML = `<b>AUTHORIZATION FAILURE:</b> ${data.detail || 'Access Denied.'}`;
-          statusBox.className = "mt-4 block p-3 rounded-xl text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+          statusBox.innerHTML = `<b>ACCESS DENIED:</b> ${data.detail}`;
+          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
         }
       } catch (err) {
-        statusBox.innerHTML = `<b>OFFLINE MODE:</b> Backend not reached. Click "Instant Demo Bypass" to view dashboard.`;
-        statusBox.className = "mt-4 block p-3 rounded-xl text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
-      } finally {
-        authBtn.innerText = "Authorize Console Session";
-        authBtn.disabled = false;
+        statusBox.innerHTML = "Backend server offline.";
+        statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
+      }
+    });
+
+    // Handle Registration
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusBox = document.getElementById('statusBox');
+      const username = document.getElementById('regUsername').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password, role })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          statusBox.innerHTML = `<b>SUCCESS:</b> ${data.message} Please click 'Sign In' to log in.`;
+          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
+          document.getElementById('loginUsername').value = username;
+          document.getElementById('loginPassword').value = password;
+          showTab('login');
+        } else {
+          statusBox.innerHTML = `<b>ERROR:</b> ${data.detail}`;
+          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+        }
+      } catch (err) {
+        statusBox.innerHTML = "Backend server offline.";
+        statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
       }
     });
   </script>
