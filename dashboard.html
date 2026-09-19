@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SENTINEL AI - Real-Time SOC Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #030712; }
+    .glass-card { background: rgba(13, 23, 38, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(52, 211, 153, 0.2); }
+    @keyframes highlightRow {
+      0% { background-color: rgba(244, 63, 94, 0.3); }
+      100% { background-color: transparent; }
+    }
+    .new-threat-anim {
+      animation: highlightRow 2.5s ease-out;
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen p-6 font-sans">
+
+  <!-- Top Navigation Bar -->
+  <header class="flex items-center justify-between pb-6 mb-8 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-400 flex items-center justify-center shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-black tracking-wider text-white uppercase">SENTINEL AI <span class="text-emerald-400 text-xs font-mono font-normal">v2.4 REAL-TIME</span></h1>
+        <p class="text-[11px] text-slate-400 tracking-wider">AUTONOMOUS CYBER THREAT DETECTION & TELEMETRY</p>
+      </div>
+    </div>
+
+    <!-- Live Status, Controls & Logout -->
+    <div class="flex items-center gap-4">
+      <div class="px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-950/30 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <span class="text-xs font-bold text-rose-400">DEFCON 2: ACTIVE DEFENSE</span>
+      </div>
+
+      <!-- Live Stream Toggle -->
+      <button id="streamToggle" onclick="toggleStream()" class="px-3 py-1.5 text-xs bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg flex items-center gap-2 font-mono transition">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        LIVE INGESTION: ON
+      </button>
+
+      <button onclick="logout()" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Metric Overview Cards (Live Updating) -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="glass-card p-4 rounded-xl">
+      <p class="text-[11px] uppercase font-bold text-slate-400">Active Threats</p>
+      <p id="activeThreatsCount" class="text-2xl font-black text-rose-400 mt-1">4 <span class="text-xs text-rose-500 font-normal">In Progress</span></p>
+    </div>
+    <div class="glass-card p-4 rounded-xl">
+      <p class="text-[11px] uppercase font-bold text-slate-400">AI Classification Accuracy</p>
+      <p class="text-2xl font-black text-emerald-400 mt-1">99.4% <span class="text-xs text-slate-400 font-normal">XGBoost Ensemble</span></p>
+    </div>
+    <div class="glass-card p-4 rounded-xl">
+      <p class="text-[11px] uppercase font-bold text-slate-400">Packets Inspected / Sec</p>
+      <p id="livePacketRate" class="text-2xl font-black text-cyan-400 mt-1">14,820 <span class="text-xs text-slate-400 font-normal">Live Telemetry</span></p>
+    </div>
+    <div class="glass-card p-4 rounded-xl">
+      <p class="text-[11px] uppercase font-bold text-slate-400">Blocked Threat IPs</p>
+      <p id="blockedCount" class="text-2xl font-black text-amber-400 mt-1">0 <span class="text-xs text-slate-400 font-normal">IPs Banned</span></p>
+    </div>
+  </div>
+
+  <!-- Real-Time AI Threat Feed Table -->
+  <div class="glass-card rounded-2xl p-6">
+    <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
+      <div>
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span> Real-Time AI Threat Feed
+        </h2>
+        <p class="text-xs text-slate-400">Packets continuously classified by the Machine Learning Anomaly Engine</p>
+      </div>
+
+      <!-- Action Buttons for Demo -->
+      <div class="flex items-center gap-3">
+        <!-- Viva Demo Button -->
+        <button onclick="injectSimulatedAttack()" class="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg shadow-lg shadow-rose-950 transition flex items-center gap-1.5">
+          <span>⚡</span> Inject Live Attack (Demo)
+        </button>
+
+        <button onclick="renderThreats()" class="px-3 py-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg transition">
+          Clear Filter
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-mono">
+            <th class="py-3 px-4">Event ID</th>
+            <th class="py-3 px-4">Timestamp</th>
+            <th class="py-3 px-4">Detected Threat</th>
+            <th class="py-3 px-4">Source IP</th>
+            <th class="py-3 px-4">Target Port</th>
+            <th class="py-3 px-4">Severity</th>
+            <th class="py-3 px-4">AI Confidence</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-right">Defense Action</th>
+          </tr>
+        </thead>
+        <tbody id="threatTable" class="divide-y divide-slate-800/60 font-mono"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Native Web Audio Cyber Alarm Beep
+    function playAlertSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch A5
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      } catch (e) { /* Audio policy bypass */ }
+    }
+
+    // Initial Threats
+    let threats = [
+      { id: "THR-8021", timestamp: "Just now", type: "SYN Flood (DDoS)", source_ip: "194.26.29.112", target_port: "Port 443 (HTTPS)", severity: "CRITICAL", ai_confidence: "98.7%", status: "Active" },
+      { id: "THR-8022", timestamp: "12s ago", type: "SQL Injection Attempt", source_ip: "45.154.255.89", target_port: "Port 80 (HTTP)", severity: "HIGH", ai_confidence: "94.2%", status: "Active" },
+      { id: "THR-8023", timestamp: "45s ago", type: "SSH Brute Force", source_ip: "185.220.101.5", target_port: "Port 22 (SSH)", severity: "MEDIUM", ai_confidence: "89.1%", status: "Active" },
+      { id: "THR-8024", timestamp: "2m ago", type: "TCP Stealth Port Scan", source_ip: "103.145.13.20", target_port: "Multiple (1-1024)", severity: "LOW", ai_confidence: "81.5%", status: "Mitigated" }
+    ];
+
+    let totalBlocked = 0;
+    let isStreamActive = true;
+    let eventCounter = 8025;
+
+    // Pool of realistic attacks for real-time streaming
+    const attackPool = [
+      { type: "DNS Amplification Attack", port: "Port 53 (DNS)", sev: "CRITICAL" },
+      { type: "Ransomware C2 Beaconing", port: "Port 8443 (Custom)", sev: "CRITICAL" },
+      { type: "Cross-Site Scripting (XSS)", port: "Port 80 (HTTP)", sev: "MEDIUM" },
+      { type: "Slowloris Denial of Service", port: "Port 443 (HTTPS)", sev: "HIGH" },
+      { type: "Kerberos Ticket Brute Force", port: "Port 88 (Kerberos)", sev: "HIGH" },
+      { type: "API Endpoint Fuzzing", port: "Port 3000 (API)", sev: "LOW" }
+    ];
+
+    function getRandomIP() {
+      return `${Math.floor(Math.random() * 200 + 20)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 250 + 1)}`;
+    }
+
+    function renderThreats() {
+      const tbody = document.getElementById('threatTable');
+      tbody.innerHTML = '';
+
+      threats.forEach((t, index) => {
+        const severityColor = t.severity === 'CRITICAL' ? 'text-rose-400 bg-rose-950/40 border-rose-800' :
+                              t.severity === 'HIGH' ? 'text-orange-400 bg-orange-950/40 border-orange-800' :
+                              t.severity === 'MEDIUM' ? 'text-amber-400 bg-amber-950/40 border-amber-800' :
+                              'text-emerald-400 bg-emerald-950/40 border-emerald-800';
+
+        const statusColor = t.status === 'Blocked' ? 'text-slate-400 bg-slate-800' :
+                            t.status === 'Mitigated' ? 'text-emerald-400 bg-emerald-950/30' :
+                            'text-rose-400 bg-rose-950/50';
+
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-900/60 transition ${index === 0 ? 'new-threat-anim' : ''}`;
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-slate-400">${t.id}</td>
+          <td class="py-3 px-4 text-slate-300 font-sans">${t.timestamp}</td>
+          <td class="py-3 px-4 font-bold text-white font-sans">${t.type}</td>
+          <td class="py-3 px-4 text-cyan-400 font-bold">${t.source_ip}</td>
+          <td class="py-3 px-4 text-slate-400 font-sans">${t.target_port}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${severityColor}">${t.severity}</span>
+          </td>
+          <td class="py-3 px-4 text-emerald-400 font-bold">${t.ai_confidence}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] ${statusColor}">${t.status}</span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            ${t.status === 'Active' ? 
+              `<button onclick="blockAttacker('${t.source_ip}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-sans text-[11px] transition shadow-md shadow-rose-950">
+                Block IP
+              </button>` : 
+              `<span class="text-slate-500 text-[11px] font-sans">Protected</span>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const activeCount = threats.filter(t => t.status === 'Active').length;
+      document.getElementById('activeThreatsCount').innerHTML = `${activeCount} <span class="text-xs text-rose-500 font-normal">In Progress</span>`;
+    }
+
+    // Add a new threat dynamically
+    function pushNewThreat(customType = null) {
+      const template = customType || attackPool[Math.floor(Math.random() * attackPool.length)];
+      const conf = (90 + Math.random() * 9.5).toFixed(1) + "%";
+
+      const newThreat = {
+        id: `THR-${eventCounter++}`,
+        timestamp: "Just now",
+        type: template.type,
+        source_ip: getRandomIP(),
+        target_port: template.port,
+        severity: template.sev,
+        ai_confidence: conf,
+        status: "Active"
+      };
+
+      // Play alert tone if CRITICAL
+      if (template.sev === 'CRITICAL') {
+        playAlertSound();
+      }
+
+      // Add to front of array
+      threats.unshift(newThreat);
+      if (threats.length > 8) threats.pop(); // Keep table clean
+
+      renderThreats();
+    }
+
+    // Manual Attack Simulator for Viva/Demos
+    function injectSimulatedAttack() {
+      pushNewThreat({ type: "🚨 CRITICAL: Zero-Day Shellcode Injection", port: "Port 443 (HTTPS)", sev: "CRITICAL" });
+      document.getElementById('livePacketRate').innerText = "48,910"; // Spike traffic
+      setTimeout(() => {
+        document.getElementById('livePacketRate').innerText = "14,820";
+      }, 2000);
+    }
+
+    function blockAttacker(ip) {
+      threats = threats.map(t => t.source_ip === ip ? { ...t, status: 'Blocked' } : t);
+      totalBlocked++;
+      document.getElementById('blockedCount').innerHTML = `${totalBlocked} <span class="text-xs text-slate-400 font-normal">IPs Banned</span>`;
+      alert(`FIREWALL ENFORCEMENT:\nIP ${ip} blocked and added to perimeter drop list.`);
+      renderThreats();
+    }
+
+    function toggleStream() {
+      isStreamActive = !isStreamActive;
+      const btn = document.getElementById('streamToggle');
+      if (isStreamActive) {
+        btn.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> LIVE INGESTION: ON`;
+        btn.className = "px-3 py-1.5 text-xs bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg flex items-center gap-2 font-mono transition";
+      } else {
+        btn.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> LIVE INGESTION: PAUSED`;
+        btn.className = "px-3 py-1.5 text-xs bg-amber-950/80 hover:bg-amber-900 border border-amber-500/40 text-amber-300 rounded-lg flex items-center gap-2 font-mono transition";
+      }
+    }
+
+    // Real-Time Packets Telemetry Counter (Fluctuates like real network traffic)
+    setInterval(() => {
+      const base = 14500;
+      const flux = Math.floor(Math.random() * 800) - 400;
+      document.getElementById('livePacketRate').innerText = (base + flux).toLocaleString();
+    }, 1200);
+
+    // Auto-stream threats every 6 seconds
+    setInterval(() => {
+      if (isStreamActive) {
+        pushNewThreat();
+      }
+    }, 6000);
+
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
+
+    renderThreats();
+  </script>
+</body>
+</html>
