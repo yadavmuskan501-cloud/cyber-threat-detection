@@ -71,9 +71,13 @@ pipeline {
                     ".jenkins-venv\\Scripts\\python.exe" -m pip install -r requirements-dev.txt
                     if errorlevel 1 exit /b 1
 
+                    echo Removing previous test report...
+
+                    if exist test-results.xml del /q test-results.xml
+
                     echo Running automated pytest tests...
 
-                    ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests
+                    ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
                     if errorlevel 1 exit /b 1
 
                     echo SUCCESS: Automated tests passed
@@ -114,6 +118,14 @@ pipeline {
     }
 
     post {
+        always {
+            echo 'Publishing automated test results...'
+
+            junit allowEmptyResults: true, testResults: 'test-results.xml'
+
+            echo 'Jenkins pipeline execution finished.'
+        }
+
         success {
             echo 'SUCCESS: Sentinel AI CI/CD pipeline completed!'
             echo 'All automated tests passed and Docker image built.'
@@ -121,10 +133,6 @@ pipeline {
 
         failure {
             echo 'FAILED: Check Jenkins Console Output for errors.'
-        }
-
-        always {
-            echo 'Jenkins pipeline execution finished.'
         }
     }
 }
