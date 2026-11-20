@@ -12,11 +12,10 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
-                echo 'GitHub checkout completed successfully'
+                echo 'GitHub checkout completed'
             }
         }
 
@@ -25,8 +24,20 @@ pipeline {
                 bat '''
                     if not exist main.py exit /b 1
                     if not exist requirements.txt exit /b 1
+                    if not exist requirements-dev.txt exit /b 1
                     if not exist Dockerfile exit /b 1
-                    echo Project files verified successfully
+                    if not exist tests\\test_api.py exit /b 1
+                    echo Project files verified
+                '''
+            }
+        }
+
+        stage('Run Automated Tests') {
+            steps {
+                bat '''
+                    py -3.12 -m venv .jenkins-venv
+                    call .jenkins-venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt
+                    call .jenkins-venv\\Scripts\\python.exe -m pytest -v tests
                 '''
             }
         }
@@ -40,26 +51,20 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo 'Building Sentinel AI Docker image...'
-
                 bat '"%DOCKER_BIN%\\docker.exe" build -t sentinel-ai:jenkins .'
-
-                echo 'Docker image build completed successfully'
             }
         }
     }
 
     post {
         success {
-            echo 'SUCCESS: Sentinel AI CI/CD pipeline completed!'
+            echo 'SUCCESS: Sentinel AI tests passed and Docker image built!'
         }
-
         failure {
-            echo 'FAILED: Check Jenkins Console Output for errors.'
+            echo 'FAILED: Check Jenkins Console Output.'
         }
-
         always {
-            echo 'Jenkins pipeline execution finished.'
+            echo 'Jenkins pipeline finished.'
         }
     }
 }
