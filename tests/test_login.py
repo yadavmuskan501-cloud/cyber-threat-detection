@@ -56,3 +56,17 @@ def test_valid_login_and_jwt_access(client):
         profile_response.json()["profile"]["username"]
         == "testanalyst"
     )
+
+
+def test_login_rejects_wrong_password(client):
+    # Try login with an incorrect password
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "username": "analyst1",
+            "password": "WrongPassword123!"
+        }
+    )
+
+    assert response.status_code == 401
+    assert "access_token" not in response.json()
