@@ -121,3 +121,29 @@ def test_admin_can_access_admin_endpoint(client):
     )
 
     assert response.status_code == 200
+
+
+def test_admin_endpoint_requires_authentication(client):
+    response = client.get("/api/rbac/admin")
+    assert response.status_code in (401, 403)
+
+
+def test_threats_endpoint_requires_authentication(client):
+    response = client.get("/api/rbac/threats")
+    assert response.status_code in (401, 403)
+
+
+def test_analyst_cannot_view_users(client):
+    token = register_and_login(
+        client,
+        "restricted_analyst"
+    )
+
+    response = client.get(
+        "/api/rbac/users",
+        headers={
+            "Authorization": f"Bearer {token}"
+        }
+    )
+
+    assert response.status_code == 403
