@@ -6,3 +6,5 @@ venv/
 .jenkins-venv/
 # ML datasets
 /ml/data/*.csv
+# Trained ML models
+/ml/models/
