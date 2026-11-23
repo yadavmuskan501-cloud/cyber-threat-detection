@@ -1,6 +1,9 @@
-
 fastapi
 uvicorn[standard]
 python-jose[cryptography]
 bcrypt
 pydantic[email]
+joblib
+scikit-learn
+numpy
+pandas
