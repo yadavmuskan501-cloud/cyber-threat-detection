@@ -1,4 +1,3 @@
-
 import os
 
 import pytest
@@ -10,12 +9,13 @@ from selenium.webdriver.support import expected_conditions as EC
 
 BASE_URL = "http://127.0.0.1:8000"
 
-TEST_USERNAME = "analyst2"
-TEST_PASSWORD = "ExamplePass123!"
+TEST_USERNAME = "tester"
+TEST_PASSWORD = "tester1234"
 
 
 @pytest.fixture
 def driver():
+    """Create and close a Chrome browser for each test."""
     options = webdriver.ChromeOptions()
 
     if os.getenv("HEADLESS") == "1":
@@ -44,7 +44,6 @@ def test_successful_login(driver):
     username_field = driver.find_element(By.ID, "loginUsername")
     password_field = driver.find_element(By.ID, "loginPassword")
 
-    # Clear default HTML values
     username_field.clear()
     password_field.clear()
 
@@ -55,16 +54,15 @@ def test_successful_login(driver):
 
     wait = WebDriverWait(driver, 15)
 
-    # Wait until the backend responds with a login result
+    # Wait for the backend login response
     status_box = wait.until(
         EC.visibility_of_element_located((By.ID, "statusBox"))
     )
 
-    # Check whether authentication succeeded
     if "AUTHENTICATED" not in status_box.text:
         pytest.fail(f"Login failed: {status_box.text}")
 
-    # Verify that JWT and user details were stored
+    # Verify authentication details are stored
     token = driver.execute_script(
         "return sessionStorage.getItem('token');"
     )
@@ -81,7 +79,7 @@ def test_successful_login(driver):
     assert username == TEST_USERNAME
     assert role is not None
 
-    # Wait for the 900ms delayed dashboard redirect
+    # Wait for dashboard redirect
     wait.until(EC.url_contains("/dashboard"))
 
 
@@ -107,3 +105,4 @@ def test_invalid_login_shows_error(driver):
     )
 
     assert "ACCESS DENIED" in status_box.text
+
