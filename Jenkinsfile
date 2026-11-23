@@ -163,6 +163,57 @@ pipeline {
                             Write-Host 'SUCCESS: Sentinel AI login page is ready.'
                         '''
 
+                        echo 'Preparing Selenium test account...'
+
+                        powershell '''
+                            $baseUrl = 'http://127.0.0.1:8000'
+
+                            $credentials = @{
+                                username = 'analyst2'
+                                email    = 'analyst2@example.com'
+                                password = 'ExamplePass123!'
+                            }
+
+                            $registrationBody = $credentials | ConvertTo-Json
+
+                            $loginBody = @{
+                                username = $credentials.username
+                                password = $credentials.password
+                            } | ConvertTo-Json
+
+                            try {
+                                $null = Invoke-RestMethod `
+                                    -Uri "$baseUrl/api/auth/register" `
+                                    -Method POST `
+                                    -ContentType 'application/json' `
+                                    -Body $registrationBody `
+                                    -ErrorAction Stop
+
+                                Write-Host 'Selenium test account registered.'
+                            }
+                            catch {
+                                Write-Host 'Registration unsuccessful; checking whether account already exists.'
+                            }
+
+                            try {
+                                $login = Invoke-RestMethod `
+                                    -Uri "$baseUrl/api/auth/login" `
+                                    -Method POST `
+                                    -ContentType 'application/json' `
+                                    -Body $loginBody `
+                                    -ErrorAction Stop
+
+                                if ($login.status -ne 'Authenticated') {
+                                    throw 'Unexpected authentication response.'
+                                }
+
+                                Write-Host 'SUCCESS: Selenium test account authenticated.'
+                            }
+                            catch {
+                                throw "Selenium test account setup failed: $($_.Exception.Message)"
+                            }
+                        '''
+
                         echo 'Running automated tests with headless Chrome...'
 
                         bat '''
