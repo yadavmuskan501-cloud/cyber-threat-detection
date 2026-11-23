@@ -3,30 +3,31 @@
 **Project:** Sentinel AI – Cyber Threat Detection & Alerting System  
 **Module:** Backend Authentication, RBAC and Integration Testing  
 **Prepared By:** Muskan  
+**Backend Framework:** FastAPI  
+**Database:** SQLite  
 **Testing Framework:** Pytest  
 **API Testing Tools:** Postman and Swagger UI  
-**Backend:** FastAPI  
-**Database:** SQLite  
 **Report Date:** 23 November 2026  
-**Status:** Backend Security Integration Verified — Full System Integration Pending
+
+**Final Status:** Backend Security Integration Verified – Full System Integration Pending
 
 ---
 
 ## 1. Objective
 
-The objective of integration testing is to verify that the Sentinel AI frontend and backend communicate correctly, JWT-based authentication protects API endpoints, and Role-Based Access Control (RBAC) restricts unauthorized access.
+The objective of integration testing is to verify that the Sentinel AI backend and frontend communicate correctly, JWT-based authentication protects API endpoints, and Role-Based Access Control (RBAC) prevents unauthorized access.
 
-The testing process focuses on:
+The testing activities focus on:
 
-1. User registration and login functionality.
+1. User registration and login.
 2. JWT access token generation and validation.
-3. Authentication of protected API endpoints.
+3. Protected API endpoint access.
 4. Role-based authorization for Analyst and Admin users.
-5. Automated backend security testing using Pytest.
-6. Manual API verification using Postman and Swagger UI.
-7. Documentation of testing evidence and integration results.
+5. Automated backend testing using Pytest.
+6. Manual API testing using Postman and Swagger UI.
+7. Documentation of integration testing evidence.
 
-This report also records the verification status of Jenkins CI, Docker and ML integration.
+The report also documents the verification status of Jenkins CI, Docker and ML integration.
 
 ## 2. Integration Testing Results
 
@@ -34,87 +35,107 @@ This report also records the verification status of Jenkins CI, Docker and ML in
 |---|---|---|---|---|
 | INT-01 | Start FastAPI application | Server starts successfully | Application startup completed | PASS |
 | INT-02 | Open frontend login page | Login page loads | HTTP 200 OK | PASS |
-| INT-03 | Login and open dashboard | Successful navigation | Dashboard opened | PASS |
-| INT-04 | Register a test account | HTTP 201 Created | HTTP 201 Created in Swagger UI | PASS |
-| INT-05 | Login through API | HTTP 200 and JWT token | HTTP 200 OK and access token received | PASS |
+| INT-03 | Login and open dashboard | Dashboard opens successfully | Dashboard opened | PASS |
+| INT-04 | Register a test account | HTTP 201 Created | HTTP 201 Created | PASS |
+| INT-05 | Login through API | HTTP 200 and JWT generated | HTTP 200 OK and access token received | PASS |
 | INT-06 | Access protected API without JWT | HTTP 401 Unauthorized | HTTP 401 Unauthorized | PASS |
-| INT-07 | Access protected API with valid JWT | HTTP 200 OK | Authenticated profile returned | PASS |
-| INT-08 | Analyst accesses Admin-only API | HTTP 403 Forbidden | Admin access restriction tested; exact latest response not independently recorded | PREVIOUSLY TESTED |
+| INT-07 | Access protected API with valid JWT | HTTP 200 OK | Authorized profile returned | PASS |
+| INT-08 | Analyst accesses Admin API | HTTP 403 Forbidden | HTTP 403 Forbidden | PASS |
 | INT-09 | Analyst accesses Admin-only user listing | HTTP 403 Forbidden | HTTP 403 Forbidden | PASS |
-| INT-10 | Analyst accesses threats endpoint | HTTP 200 OK | Endpoint executed; latest response status not independently recorded | PREVIOUSLY TESTED |
-| INT-11 | Run automated backend Pytest tests | All backend tests pass | 13 passed in previously verified backend test run; latest output not attached | PREVIOUSLY VERIFIED |
-| INT-12 | Jenkins pipeline execution | Successful CI build | Jenkins SUCCESS evidence unavailable | PENDING |
-| INT-13 | Docker image build | Image builds successfully | Docker build execution not independently verified | PENDING |
-| INT-14 | ML prediction API integration | Prediction API returns valid results | Endpoint and model integration not verified | PENDING |
-| INT-15 | Complete frontend-to-ML workflow | Threat detection results displayed | End-to-end workflow not verified | PENDING |
-
-The integration testing results demonstrate that the backend authentication and authorization functionality has been tested successfully.
-
-However, full-system integration cannot be declared complete until the remaining Jenkins, Docker, ML and end-to-end tests are independently verified.
+| INT-10 | Analyst accesses threats endpoint | HTTP 200 OK | Endpoint tested; exact response not recorded | VERIFIED – RESPONSE UNRECORDED |
+| INT-11 | Execute backend automated tests | All 13 tests pass | 13 passed in previously recorded run | PASS |
+| INT-12 | Jenkins pipeline execution | Successful CI build | Latest successful build not verified | PENDING |
+| INT-13 | Docker image build | Image builds successfully | Build not independently verified | PENDING |
+| INT-14 | ML prediction API integration | Valid prediction response | Not independently verified | PENDING |
+| INT-15 | Complete frontend-to-ML workflow | Prediction displayed on frontend | Not independently verified | PENDING |
 
 ## 3. Backend API Testing
 
-The following backend endpoints were used to verify authentication and authorization functionality.
+The following REST API endpoints were tested as part of the authentication and authorization module.
 
-| Method | API Endpoint | Purpose | Expected HTTP Status |
-|---|---|---|---|
-| POST | `/api/auth/register` | Register a new user | 201 Created |
-| POST | `/api/auth/login` | Authenticate user and generate JWT | 200 OK |
-| GET | `/api/auth/me` | Retrieve authenticated user profile | 200 OK |
-| GET | `/api/rbac/threats` | Access role-protected threats endpoint | 200 OK |
-| GET | `/api/rbac/admin` | Restrict Admin-only functionality | 403 Forbidden for Analyst |
-| GET | `/api/rbac/users` | Restrict Admin-only user listing | 403 Forbidden for Analyst |
-| GET | `/api/auth/me` without JWT | Verify authentication enforcement | 401 Unauthorized |
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Authenticate user and generate JWT |
+| GET | `/api/auth/me` | Retrieve authenticated user profile |
+| GET | `/api/rbac/threats` | Access role-protected threats endpoint |
+| GET | `/api/rbac/admin` | Restrict Admin-only functionality |
+| GET | `/api/rbac/users` | Restrict Admin-only user listing |
 
-### 3.1 JWT Authentication Testing
+### 3.1 User Registration
 
-JWT authentication was tested through user registration, login and protected endpoint access.
+The registration endpoint was tested using Swagger UI.
+
+**Verified Result:** HTTP 201 Created.
+
+A new test account was successfully registered.
+
+### 3.2 JWT Authentication
+
+The login endpoint was tested using valid registered credentials.
 
 The authentication workflow includes:
 
-1. Registering a user through the registration API.
-2. Authenticating the registered user through the login API.
-3. Receiving a JWT access token after successful login.
-4. Supplying the token using Bearer authentication.
-5. Accessing protected API endpoints with the valid token.
-6. Verifying that requests without authentication are rejected.
+1. Submitting username and password.
+2. Validating user credentials.
+3. Generating a JWT access token.
+4. Returning the access token to the client.
+5. Using the token to access protected API endpoints.
 
-**Verified Results:**
+**Verified Result:** HTTP 200 OK with JWT access token.
 
-- User registration returned HTTP 201 Created.
-- Successful login returned HTTP 200 OK.
-- A JWT access token was generated after login.
-- Authenticated profile access was successful.
-- Access without a JWT returned HTTP 401 Unauthorized.
+### 3.3 Protected API Access
 
-**Status: PASS**
+The `/api/auth/me` endpoint was tested with a valid JWT token.
 
-### 3.2 Role-Based Access Control Testing
+The backend successfully authenticated the user and returned the user profile.
 
-RBAC restricts API access according to the authenticated user's role.
+**Verified Result:** HTTP 200 OK.
 
-The application uses role-based authorization to distinguish permitted Analyst operations from restricted Admin operations.
+### 3.4 Unauthorized API Access
 
-The following authorization scenarios were tested:
+The protected profile endpoint was also tested without a JWT token.
+
+The backend rejected the unauthenticated request.
+
+**Verified Result:** HTTP 401 Unauthorized.
+
+## 4. Role-Based Access Control Testing
+
+Role-Based Access Control (RBAC) restricts API access according to the authenticated user's assigned role.
+
+The following scenarios were tested:
 
 | User Role | Endpoint | Expected Result |
 |---|---|---|
 | Analyst | `/api/rbac/threats` | Access allowed |
 | Analyst | `/api/rbac/admin` | Access denied |
 | Analyst | `/api/rbac/users` | Access denied |
-| Unauthenticated | `/api/auth/me` | Access denied |
+| Unauthenticated User | `/api/auth/me` | Access denied |
 
-The user-listing endpoint returned HTTP 403 Forbidden for an Analyst account.
+### 4.1 Analyst Access Restriction
 
-The Admin endpoint and threats endpoint were also exercised during testing. Their latest exact response codes should be confirmed from the final test evidence before marking those individual checks as independently verified.
+An Analyst user attempted to access the Admin-only endpoint.
 
-**Status: PARTIALLY REVERIFIED**
+The backend rejected the request with:
 
-## 4. Automated Backend Security Testing Using Pytest
+**HTTP 403 Forbidden**
 
-Pytest was used to automate backend security testing and verify the behavior of authentication and authorization endpoints.
+### 4.2 Admin-only User Listing
 
-### 4.1 Testing Command
+An Analyst user attempted to access the Admin-only user listing endpoint.
+
+The backend rejected the request with:
+
+**HTTP 403 Forbidden**
+
+These tests demonstrate that unauthorized users cannot access restricted administrative resources.
+
+## 5. Automated Backend Testing Using Pytest
+
+Pytest was used to automate backend API and security testing.
+
+### 5.1 Test Command
 
 The backend-only test command is:
 
@@ -122,143 +143,80 @@ The backend-only test command is:
 python -m pytest -v tests/test_api.py tests/test_auth.py tests/test_login.py tests/test_rbac.py
 ```
 
-### 4.2 Recorded Test Results
+### 5.2 Previously Recorded Test Results
 
 | Metric | Result |
 |---|---|
-| Previously verified backend tests | 13 |
-| Previously passed | 13 |
-| Previously failed | 0 |
-| Latest backend-only run | Output confirmation pending |
+| Total backend tests | 13 |
+| Passed | 13 |
+| Failed | 0 |
 
-The previously verified backend test suite completed with 13 passing tests.
+**Recorded Result: 13 passed, 0 failed.**
 
-The latest backend-only test execution should be documented with its terminal summary before the report is treated as final execution evidence.
-
-### 4.3 Security Test Coverage
+### 5.3 Test Coverage
 
 The automated tests cover:
 
-1. Basic backend API functionality.
-2. User authentication.
-3. JWT token validation.
-4. Invalid authentication credentials.
-5. Expired or invalid JWT handling.
-6. Role-based authorization.
-7. Unauthorized access restrictions.
+1. Application startup.
+2. Protected API authentication.
+3. Invalid JWT token rejection.
+4. Expired JWT token rejection.
+5. Successful user login.
+6. Invalid login credentials.
+7. Analyst role authorization.
+8. Admin-only endpoint restrictions.
+9. Unauthorized access handling.
 
-Passing automated tests confirms the behavior covered by those tests. It does not guarantee that every security vulnerability has been eliminated.
+Passing these tests confirms the functionality covered by the automated test cases.
 
-**Status: PREVIOUS BACKEND TEST RUN PASSED**
+It does not guarantee that every application feature or security vulnerability has been independently verified.
 
-## 5. Manual API Testing Using Postman and Swagger UI
+## 6. Manual API Testing Using Postman and Swagger UI
 
-Manual API testing was conducted to validate backend functionality and demonstrate authentication and authorization behavior.
+Manual API testing was conducted to verify backend functionality and authentication behavior.
 
-### 5.1 Postman Testing
+### 6.1 Postman Testing
 
-Postman was used to execute API requests and inspect HTTP responses.
+Postman was used to execute backend API requests and inspect HTTP responses.
 
-The tested scenarios included:
+The testing activities included:
 
 - User registration.
 - User login.
-- JWT-protected profile access.
-- Analyst threats endpoint access.
+- JWT-protected API access.
+- Analyst endpoint access.
 - Restricted Admin API access.
-- Restricted user-listing access.
-- Access without authentication.
+- Unauthorized access testing.
 
-Six Postman API testing screenshots were uploaded to the project's GitHub repository as supporting evidence.
+Six Postman screenshots were uploaded to the GitHub repository as testing evidence.
 
-### 5.2 Swagger UI Testing
+### 6.2 Swagger UI Testing
 
-Swagger UI was accessed through:
+Swagger UI was accessed using:
 
 `http://127.0.0.1:8000/docs`
 
-Swagger was used to demonstrate:
+The following operations were demonstrated:
 
-1. User registration with HTTP 201 Created.
-2. Successful login with HTTP 200 OK.
+1. User registration.
+2. Successful login.
 3. JWT access token generation.
-4. Bearer token authentication.
-5. Protected API access.
-6. Role-based authorization restrictions.
-7. Unauthorized access returning HTTP 401.
+4. Bearer token authorization.
+5. Protected profile access.
+6. Analyst authorization restrictions.
+7. Unauthorized access without a JWT token.
 
-The Swagger demonstration verified the core backend authentication workflow.
+Swagger UI was used for interactive API execution and verification.
 
-**Status: CORE AUTHENTICATION DEMONSTRATION PASSED**
+**Status: Core Authentication and Authorization Demonstration Completed.**
 
-## 6. Jenkins CI and Docker Verification
+## 7. Testing Evidence
 
-The project contains a Jenkinsfile configured for:
+### 7.1 GitHub Testing Evidence
 
-1. GitHub repository checkout.
-2. Project file verification.
-3. Python environment verification.
-4. Automated Pytest execution.
-5. Docker availability checks.
-6. Docker image build.
-
-The Jenkinsfile was reviewed, but successful Jenkins pipeline execution and Docker image creation have not yet been independently verified.
-
-**Current Status: PENDING VERIFICATION**
-
-Required evidence:
-
-- Jenkins SUCCESS build screenshot.
-- Jenkins console output showing test execution.
-- Docker image build success output.
-- Build branch and commit ID.
-
-The Jenkins and Docker implementation and execution evidence are handled by the DevOps workstream.
-
-## 7. ML Integration Verification
-
-The ML prediction module is handled by the ML development workstream.
-
-At the time of this report, the following items have not been independently verified:
-
-1. ML prediction endpoint execution.
-2. Model integration with the backend.
-3. Valid prediction API responses.
-4. Invalid-input handling.
-5. Frontend display of ML prediction results.
-6. Complete frontend-to-ML workflow.
-
-**Current Status: PENDING VERIFICATION**
-
-Required evidence:
-
-- Integrated ML prediction endpoint.
-- Valid prediction API response.
-- Invalid-input response.
-- Frontend display of prediction results, if implemented.
-- End-to-end integration test results.
-
-## 8. Testing Evidence
-
-### 8.1 Available Evidence
-
-The project contains the following testing documentation and evidence:
-
-- Previously recorded Pytest execution showing 13 passed tests.
-- GitHub Pull Request #6 merge evidence.
-- Backend security test files.
-- Authentication and authorization test results.
-- Postman API testing screenshots.
-- Swagger UI live demonstration results.
-- GitHub testing-evidence Pull Request merged into the main branch.
-
-### 8.2 Postman Screenshot Evidence
-
-Six Postman screenshots are stored in:
+The following six Postman screenshots are stored in:
 
 `docs/testing_evidence/`
-
-The screenshot files are:
 
 1. `Screenshot 2026-11-23 175518.png`
 2. `Screenshot 2026-11-23 175533.png`
@@ -267,47 +225,92 @@ The screenshot files are:
 5. `Screenshot 2026-11-23 175614.png`
 6. `Screenshot 2026-11-23 175625.png`
 
-These files document manual API testing activities. Individual screenshot contents should be checked before assigning each file to a specific test case.
+The screenshots provide supporting evidence of manual API testing.
 
-Sensitive information such as passwords and JWT access tokens must be redacted from shared evidence.
+### 7.2 Additional Testing Evidence
 
-### 8.3 Pending Evidence
+- Pytest execution results.
+- JWT authentication test results.
+- Protected API access results.
+- HTTP 401 Unauthorized response.
+- HTTP 403 Forbidden response.
+- Swagger UI API demonstration.
+- GitHub testing-evidence Pull Request merge.
 
-The following evidence is still required:
+Sensitive credentials and JWT access tokens must remain hidden in all shared screenshots.
 
-- Latest backend-only Pytest summary.
-- Jenkins successful build.
-- Docker image build.
-- ML prediction integration.
-- Complete end-to-end application demonstration.
+## 8. Jenkins CI and Docker Verification
 
-## 9. Limitations
+The project contains a Jenkinsfile configured for the following stages:
+
+1. GitHub repository checkout.
+2. Project file verification.
+3. Python environment verification.
+4. Automated Pytest execution.
+5. Docker availability checks.
+6. Docker image build.
+
+The Jenkinsfile has been reviewed, but the latest successful Jenkins execution and Docker image build have not been independently verified.
+
+**Current Status: PENDING VERIFICATION**
+
+Required evidence:
+
+- Jenkins SUCCESS build screenshot.
+- Jenkins console output.
+- Successful automated test execution.
+- Docker image build output.
+- Build branch and commit ID.
+
+## 9. ML Integration Verification
+
+The ML prediction module is handled by the ML development workstream.
+
+The following activities require independent verification:
+
+1. ML prediction endpoint execution.
+2. Backend integration with the trained model.
+3. Valid prediction API response.
+4. Invalid-input handling.
+5. Frontend display of prediction results.
+6. Complete frontend-to-ML workflow.
+
+**Current Status: PENDING VERIFICATION**
+
+Required evidence:
+
+- ML prediction endpoint.
+- Successful prediction response.
+- Invalid-input response.
+- Frontend prediction display.
+- End-to-end integration evidence.
+
+## 10. Limitations
 
 The following limitations were identified during integration testing:
 
-1. Passing the backend automated tests verifies only the functionality covered by those tests.
-2. Jenkins pipeline execution has not been independently verified.
+1. Automated tests verify only the scenarios included in the test suite.
+2. Jenkins CI execution requires independent verification.
 3. Docker image build evidence is pending.
-4. ML prediction integration has not been independently verified.
+4. ML prediction API integration has not been independently verified.
 5. Complete frontend-to-ML workflow testing remains pending.
-6. Latest backend-only Pytest output needs to be recorded.
-7. Some manual authorization test responses require final evidence confirmation.
+6. The exact latest response for the threats endpoint was not recorded.
 
-These limitations should be resolved or documented before declaring the complete system fully integrated.
+These limitations should be addressed before declaring the complete application fully integrated.
 
-## 10. Conclusion
+## 11. Conclusion
 
-The Sentinel AI backend authentication and authorization modules have undergone automated and manual security testing.
+The Sentinel AI backend authentication and authorization modules have undergone automated and manual testing.
 
-Previously verified backend Pytest execution showed 13 passing tests.
+The previously recorded backend Pytest execution showed 13 passing tests.
 
-Manual testing using Postman and Swagger UI demonstrated successful user registration, login, JWT generation, authenticated API access, and rejection of unauthenticated requests.
+Manual API testing through Postman and Swagger UI demonstrated successful user registration, JWT generation, authenticated profile access, and rejection of unauthenticated requests.
 
-Role-Based Access Control was also tested to verify restrictions on Analyst access to Admin-only endpoints.
+Role-Based Access Control was also tested to verify restrictions on Analyst access to Admin-only resources.
 
-Testing evidence and the integration testing report are maintained in the GitHub repository.
+The testing evidence and integration report are maintained in the project's GitHub repository.
 
-The backend authentication and RBAC functionality has been substantially verified. However, the latest backend test execution, Jenkins CI, Docker, ML integration and full end-to-end application workflow require final independent verification.
+The backend authentication and RBAC functionality has been verified for the documented scenarios. However, Jenkins CI, Docker image building, ML prediction integration and complete end-to-end application testing require further independent verification.
 
 **Final Status: Backend Security Testing Verified — Full System Integration Pending**
 
@@ -316,4 +319,4 @@ The backend authentication and RBAC functionality has been substantially verifie
 **Prepared By:** Muskan  
 **Project:** Sentinel AI – Cyber Threat Detection & Alerting System  
 **Module:** Backend Authentication, RBAC and Integration Testing  
-**Date:** 23 November 2026
+**Report Date:** 23 November 2026
