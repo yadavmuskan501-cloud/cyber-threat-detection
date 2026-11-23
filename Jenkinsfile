@@ -216,16 +216,18 @@ pipeline {
 
                         echo 'Running automated tests with headless Chrome...'
 
-                        bat '''
-                            @echo off
+catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+    bat '''
+        @echo off
 
-                            if exist test-results.xml del /q test-results.xml
+        if exist test-results.xml del /q test-results.xml
 
-                            ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
-                            if errorlevel 1 exit /b 1
+        ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
+        if errorlevel 1 exit /b 1
 
-                            echo SUCCESS: All automated tests passed
-                        '''
+        echo SUCCESS: All automated tests passed
+    '''
+}
                     }
                     finally {
                         echo 'Stopping temporary Sentinel AI server...'
