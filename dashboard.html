@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,7 @@
     }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen p-6 font-sans">
+<body class="text-slate-100 min-h-screen p-6 font-sans" style="visibility: hidden;">
 
   <!-- Top Navigation Bar -->
   <header class="flex flex-wrap items-center justify-between pb-6 mb-8 border-b border-slate-800 gap-4">
@@ -341,12 +342,12 @@
       renderThreats();
     }
 
-    // Authenticate the user before starting the dashboard
+    // Authenticate the user before displaying the dashboard
     async function initializeDashboard() {
       const token = sessionStorage.getItem("token");
 
       if (!token) {
-        window.location.href = "/";
+        window.location.replace("/");
         return;
       }
 
@@ -355,12 +356,13 @@
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`
-          }
+          },
+          cache: "no-store"
         });
 
         if (!response.ok) {
           sessionStorage.clear();
-          window.location.href = "/";
+          window.location.replace("/");
           return;
         }
 
@@ -376,6 +378,9 @@
 
         document.getElementById("analystRole").textContent =
           `ROLE: ${profile.role.toUpperCase()}`;
+
+        // Show dashboard content only after authentication succeeds
+        document.body.style.visibility = "visible";
 
         // Start dashboard rendering and simulations only after authentication
         renderThreats();
@@ -394,13 +399,66 @@
       } catch (error) {
         console.error("Dashboard authentication error:", error);
         sessionStorage.clear();
-        window.location.href = "/";
+        window.location.replace("/");
       }
     }
 
+    // Revalidate authentication whenever the browser restores this page
+    // from its Back/Forward cache. Keep the dashboard hidden until verified.
+    window.addEventListener("pageshow", async function(event) {
+      if (!event.persisted) {
+        return;
+      }
+
+      document.body.style.visibility = "hidden";
+
+      const token = sessionStorage.getItem("token");
+
+      if (!token) {
+        window.location.replace("/");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          },
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          sessionStorage.clear();
+          window.location.replace("/");
+          return;
+        }
+
+        const data = await response.json();
+        const profile = data.profile;
+
+        if (!profile || !profile.username || !profile.role) {
+          throw new Error("The restored dashboard profile is invalid.");
+        }
+
+        document.getElementById("analystDisplay").textContent =
+          `Analyst: ${profile.username}`;
+
+        document.getElementById("analystRole").textContent =
+          `ROLE: ${profile.role.toUpperCase()}`;
+
+        document.body.style.visibility = "visible";
+
+      } catch (error) {
+        console.error("Restored dashboard authentication error:", error);
+        sessionStorage.clear();
+        window.location.replace("/");
+      }
+    });
+
     function logout() {
       sessionStorage.clear();
-      window.location.href = "/";
+      window.location.replace("/");
     }
 
     initializeDashboard();
