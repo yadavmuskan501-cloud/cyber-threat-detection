@@ -39,8 +39,8 @@
       </div>
 
       <div class="text-right border-l border-slate-800 pl-4">
-        <p id="analystDisplay" class="text-xs font-bold text-white">Analyst: MUSKAN</p>
-        <p class="text-[10px] text-emerald-400 font-mono">ROLE: CYBERSECURITY LEAD</p>
+        <p id="analystDisplay" class="text-xs font-bold text-white">Analyst: Loading...</p>
+        <p id="analystRole" class="text-[10px] text-emerald-400 font-mono">ROLE: Loading...</p>
       </div>
 
       <button onclick="logout()" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700">
@@ -60,8 +60,8 @@
       <p class="text-2xl font-black text-emerald-400 mt-1">99.4% <span class="text-xs text-slate-400 font-normal">Ensemble XGBoost</span></p>
     </div>
     <div class="glass-card p-4 rounded-xl">
-      <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Packets Inspected / Sec</p>
       <p id="livePacketRate" class="text-2xl font-black text-cyan-400 mt-1">14,820 <span class="text-xs text-slate-400 font-normal">Live Telemetry</span></p>
+      <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Packets Inspected / Sec</p>
     </div>
     <div class="glass-card p-4 rounded-xl">
       <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Blocked Adversaries</p>
@@ -341,22 +341,69 @@
       renderThreats();
     }
 
-    // Live Telemetry Fluctuation
-    setInterval(() => {
-      const base = 14500;
-      const flux = Math.floor(Math.random() * 800) - 400;
-      document.getElementById('livePacketRate').innerText = (base + flux).toLocaleString();
-    }, 1200);
+    // Authenticate the user before starting the dashboard
+    async function initializeDashboard() {
+      const token = sessionStorage.getItem("token");
 
-    // Stream new threat every 7 seconds
-    setInterval(pushNewThreat, 7000);
+      if (!token) {
+        window.location.href = "/";
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          sessionStorage.clear();
+          window.location.href = "/";
+          return;
+        }
+
+        const data = await response.json();
+        const profile = data.profile;
+
+        if (!profile || !profile.username || !profile.role) {
+          throw new Error("The profile response is missing username or role.");
+        }
+
+        document.getElementById("analystDisplay").textContent =
+          `Analyst: ${profile.username}`;
+
+        document.getElementById("analystRole").textContent =
+          `ROLE: ${profile.role.toUpperCase()}`;
+
+        // Start dashboard rendering and simulations only after authentication
+        renderThreats();
+
+        // Live Telemetry Fluctuation
+        setInterval(() => {
+          const base = 14500;
+          const flux = Math.floor(Math.random() * 800) - 400;
+          document.getElementById("livePacketRate").innerText =
+            (base + flux).toLocaleString();
+        }, 1200);
+
+        // Stream new threat every 7 seconds
+        setInterval(pushNewThreat, 7000);
+
+      } catch (error) {
+        console.error("Dashboard authentication error:", error);
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
 
     function logout() {
       sessionStorage.clear();
-      window.location.href = '/';
+      window.location.href = "/";
     }
 
-    renderThreats();
+    initializeDashboard();
   </script>
 </body>
 </html>
