@@ -1,7 +1,35 @@
+﻿# Python virtual environments
 .venv/
 venv/
+.jenkins-venv/
+
+# Python cache
 __pycache__/
-.pytest_cache/
-.git/
-.env
 *.pyc
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Local databases and backups
+*.db
+*.db.backup
+
+# Jenkins temporary files and reports
+.jenkins-server.pid
+test-results.xml
+
+# Documentation
+*.doc
+*.docx
+*.rtf
+*.pdf
+
+# Test artifacts
+htmlcov/
+.coverage
