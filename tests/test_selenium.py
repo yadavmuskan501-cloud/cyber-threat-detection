@@ -31,10 +31,14 @@ def driver():
 
 
 def test_login_page_loads(driver):
-    """Verify that the login page loads."""
+    """Verify that the login page loads correctly."""
     driver.get(BASE_URL)
 
-    assert driver.title or "login" in driver.current_url.lower()
+    assert driver.current_url == BASE_URL + "/"
+
+    login_form = driver.find_element(By.ID, "loginForm")
+
+    assert login_form.is_displayed()
 
 
 def test_successful_login(driver):
@@ -54,7 +58,7 @@ def test_successful_login(driver):
 
     wait = WebDriverWait(driver, 15)
 
-    # Wait for the backend login response
+    # Wait for the backend login response.
     status_box = wait.until(
         EC.visibility_of_element_located((By.ID, "statusBox"))
     )
@@ -62,7 +66,7 @@ def test_successful_login(driver):
     if "AUTHENTICATED" not in status_box.text:
         pytest.fail(f"Login failed: {status_box.text}")
 
-    # Verify authentication details are stored
+    # Verify authentication details are stored.
     token = driver.execute_script(
         "return sessionStorage.getItem('token');"
     )
@@ -79,8 +83,10 @@ def test_successful_login(driver):
     assert username == TEST_USERNAME
     assert role is not None
 
-    # Wait for dashboard redirect
+    # Wait for dashboard redirect.
     wait.until(EC.url_contains("/dashboard"))
+
+    assert "/dashboard" in driver.current_url
 
 
 def test_invalid_login_shows_error(driver):
@@ -105,4 +111,3 @@ def test_invalid_login_shows_error(driver):
     )
 
     assert "ACCESS DENIED" in status_box.text
-

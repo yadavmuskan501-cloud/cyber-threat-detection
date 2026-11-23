@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,8 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SENTINEL AI - Secure Authentication</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    body { background: radial-gradient(circle at center, #071520 0%, #030712 100%); }
+    body {
+      background: radial-gradient(circle at center, #071520 0%, #030712 100%);
+    }
+
     .glass-card {
       background: rgba(13, 23, 38, 0.85);
       backdrop-filter: blur(16px);
@@ -14,10 +19,11 @@
     }
   </style>
 </head>
+
 <body class="text-slate-100 flex items-center justify-center min-h-screen p-4 font-sans">
 
   <div class="glass-card w-full max-w-md rounded-2xl p-8 shadow-2xl relative z-10">
-    
+
     <!-- Shield Logo -->
     <div class="flex justify-center mb-4">
       <div class="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-400 flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.5)]">
@@ -28,171 +34,317 @@
       </div>
     </div>
 
+    <!-- Heading -->
     <div class="text-center mb-6">
       <h1 class="text-xl font-black text-white uppercase">SENTINEL AI</h1>
-      <p class="text-[11px] text-emerald-400 font-mono tracking-wider uppercase mt-0.5">Bcrypt & JWT Protected Access</p>
+      <p class="text-[11px] text-emerald-400 font-mono tracking-wider uppercase mt-0.5">
+        Bcrypt & JWT Protected Access
+      </p>
     </div>
 
-    <!-- Tab Toggle: Sign In vs Register -->
+    <!-- Tab Toggle -->
     <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 border border-slate-800 rounded-xl mb-6 text-xs font-bold">
-      <button id="tabLogin" onclick="showTab('login')" class="py-2 rounded-lg bg-emerald-500 text-slate-950 transition">
+
+      <button
+        type="button"
+        id="tabLogin"
+        onclick="showTab('login')"
+        class="py-2 rounded-lg bg-emerald-500 text-slate-950 transition">
         Sign In
       </button>
-      <button id="tabRegister" onclick="showTab('register')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">
+
+      <button
+        type="button"
+        id="tabRegister"
+        onclick="showTab('register')"
+        class="py-2 rounded-lg text-slate-400 hover:text-white transition">
         Register Analyst
       </button>
+
     </div>
 
-    <!-- 1. LOGIN FORM -->
+    <!-- LOGIN FORM -->
     <form id="loginForm" class="space-y-4">
+
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Analyst Handle</label>
-        <input type="text" id="loginUsername" value="analyst1" required 
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Analyst Handle
+        </label>
+
+        <input
+          type="text"
+          id="loginUsername"
+          placeholder="Enter your username"
+          autocomplete="username"
+          required
           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Passkey</label>
-        <input type="password" id="loginPassword" value="Sentinel2026!" required 
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Passkey
+        </label>
+
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
       </div>
 
-      <button type="submit" id="loginBtn"
+      <button
+        type="submit"
+        id="loginBtn"
         class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-emerald-500/20">
         Authenticate & Issue JWT
       </button>
+
     </form>
 
-    <!-- 2. REGISTER FORM -->
+    <!-- REGISTRATION FORM -->
     <form id="registerForm" class="space-y-3 hidden">
+
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Username</label>
-        <input type="text" id="regUsername" placeholder="muskan" required 
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Username
+        </label>
+
+        <input
+          type="text"
+          id="regUsername"
+          placeholder="Enter username"
+          autocomplete="username"
+          required
           class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</label>
-        <input type="email" id="regEmail" placeholder="muskan@sentinelai.com" required 
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Email
+        </label>
+
+        <input
+          type="email"
+          id="regEmail"
+          placeholder="Enter email address"
+          autocomplete="email"
+          required
           class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Password (min 8 chars)</label>
-        <input type="password" id="regPassword" placeholder="••••••••" required 
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Password (min 8 chars)
+        </label>
+
+        <input
+          type="password"
+          id="regPassword"
+          placeholder="Enter password"
+          autocomplete="new-password"
+          required
           class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">SOC Role</label>
-        <select id="regRole" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          SOC Role
+        </label>
+
+        <select
+          id="regRole"
+          class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-400 text-sm font-mono">
+
           <option value="Lead Cybersecurity Analyst">Lead Cybersecurity Analyst</option>
           <option value="Incident Commander">Incident Commander</option>
           <option value="SOC Tier-2 Investigator">SOC Tier-2 Investigator</option>
+
         </select>
       </div>
 
-      <button type="submit" id="regBtn"
+      <button
+        type="submit"
+        id="regBtn"
         class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-indigo-600/30">
         Create & Hash into Database
       </button>
+
     </form>
 
-    <div id="statusBox" class="mt-4 hidden p-3 rounded-lg text-xs border"></div>
+    <!-- STATUS MESSAGE -->
+    <div
+      id="statusBox"
+      role="status"
+      aria-live="polite"
+      class="mt-4 hidden p-3 rounded-lg text-xs border">
+    </div>
 
+    <!-- Footer -->
     <div class="mt-6 pt-4 border-t border-slate-800 text-center text-[10px] text-slate-500 font-mono">
       STORAGE: SQLite (sentinel.db) • HASH: Bcrypt 12-Rounds • TOKEN: HS256
     </div>
+
   </div>
 
   <script>
-    function showTab(tab) {
+
+    // Display Login or Registration tab
+    function showTab(tab, preserveStatus = false) {
+
       const loginForm = document.getElementById('loginForm');
       const registerForm = document.getElementById('registerForm');
       const tabLogin = document.getElementById('tabLogin');
       const tabRegister = document.getElementById('tabRegister');
       const statusBox = document.getElementById('statusBox');
-      statusBox.classList.add('hidden');
+
+      if (!preserveStatus) {
+        statusBox.classList.add('hidden');
+      }
 
       if (tab === 'login') {
+
         loginForm.classList.remove('hidden');
         registerForm.classList.add('hidden');
+
         tabLogin.className = "py-2 rounded-lg bg-emerald-500 text-slate-950 transition";
         tabRegister.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+
       } else {
+
         loginForm.classList.add('hidden');
         registerForm.classList.remove('hidden');
+
         tabRegister.className = "py-2 rounded-lg bg-indigo-600 text-white transition";
         tabLogin.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+
       }
     }
 
+
     // Handle Login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
+
       e.preventDefault();
+
       const statusBox = document.getElementById('statusBox');
-      const username = document.getElementById('loginUsername').value;
+
+      const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
 
       try {
+
         const res = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ username, password })
         });
+
         const data = await res.json();
 
         if (res.ok) {
-          // Store JWT token
+
+          // Store JWT and user information
           sessionStorage.setItem('token', data.access_token);
           sessionStorage.setItem('user_role', data.user.role);
           sessionStorage.setItem('username', data.user.username);
 
-          statusBox.innerHTML = `<b>AUTHENTICATED:</b> JWT issued for <b>${data.user.username}</b> (${data.user.role}). Redirecting...`;
-          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
-          setTimeout(() => { window.location.href = "/dashboard"; }, 900);
+          statusBox.innerHTML =
+            `<b>AUTHENTICATED:</b> JWT issued for <b>${data.user.username}</b> (${data.user.role}). Redirecting...`;
+
+          statusBox.className =
+            "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
+
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 900);
+
         } else {
-          statusBox.innerHTML = `<b>ACCESS DENIED:</b> ${data.detail}`;
-          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+
+          statusBox.textContent =
+            `ACCESS DENIED: ${data.detail || 'Invalid credentials'}`;
+
+          statusBox.className =
+            "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+
         }
+
       } catch (err) {
-        statusBox.innerHTML = "Backend server offline.";
-        statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
+
+        statusBox.textContent = "Backend server offline.";
+
+        statusBox.className =
+          "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
+
       }
+
     });
+
 
     // Handle Registration
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
+
       e.preventDefault();
+
       const statusBox = document.getElementById('statusBox');
-      const username = document.getElementById('regUsername').value;
-      const email = document.getElementById('regEmail').value;
+
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
       const password = document.getElementById('regPassword').value;
       const role = document.getElementById('regRole').value;
 
       try {
+
         const res = await fetch('/api/auth/register', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ username, email, password, role })
         });
+
         const data = await res.json();
 
         if (res.ok) {
-          statusBox.innerHTML = `<b>SUCCESS:</b> ${data.message} Please click 'Sign In' to log in.`;
-          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
+
+          // Fill login form with newly registered account details
           document.getElementById('loginUsername').value = username;
           document.getElementById('loginPassword').value = password;
-          showTab('login');
+
+          // Switch to login tab without hiding success message
+          showTab('login', true);
+
+          statusBox.innerHTML =
+            `<b>SUCCESS:</b> ${data.message || 'Account created successfully.'} Please click 'Sign In' to log in.`;
+
+          statusBox.className =
+            "mt-4 block p-3 rounded-lg text-xs border border-emerald-500/40 bg-emerald-950/40 text-emerald-300";
+
         } else {
-          statusBox.innerHTML = `<b>ERROR:</b> ${data.detail}`;
-          statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+
+          statusBox.textContent =
+            `ERROR: ${data.detail || 'Registration failed'}`;
+
+          statusBox.className =
+            "mt-4 block p-3 rounded-lg text-xs border border-rose-500/40 bg-rose-950/40 text-rose-300";
+
         }
+
       } catch (err) {
-        statusBox.innerHTML = "Backend server offline.";
-        statusBox.className = "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
+
+        statusBox.textContent = "Backend server offline.";
+
+        statusBox.className =
+          "mt-4 block p-3 rounded-lg text-xs border border-amber-500/40 bg-amber-950/40 text-amber-300";
+
       }
+
     });
+
   </script>
+
 </body>
 </html>
