@@ -4,7 +4,8 @@ import sqlite3
 import bcrypt
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Any
+from ml.predict import predict_threat
 
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.responses import FileResponse
@@ -708,3 +709,56 @@ async def list_users(
         "status": "Authorized",
         "users": users
     }
+
+
+
+
+# ================= ML THREAT PREDICTION =================
+
+class ThreatPredictionRequest(BaseModel):
+    features: dict[str, Any] = Field(
+        ...,
+        description="All 78 network traffic features used during ML training"
+    )
+
+
+@app.post(
+    "/api/ml/predict",
+    summary="Predict Cyber Threat Using Random Forest",
+    description=(
+        "Classifies network traffic as BENIGN or ATTACK "
+        "using the trained Random Forest model. "
+        "Requires JWT authentication and Admin or Analyst role."
+    ),
+    tags=["Machine Learning"],
+    responses={
+        400: {"description": "Invalid or missing network traffic features"},
+        401: {"description": "Invalid or expired JWT token"},
+        403: {"description": "Insufficient permissions"},
+        503: {"description": "ML model unavailable"}
+    }
+)
+async def predict_network_threat(
+    request: ThreatPredictionRequest,
+    current_user: dict = Depends(require_analyst_or_admin)
+):
+    try:
+        result = predict_threat(request.features)
+
+        return {
+            "status": "success",
+            "model": "Random Forest",
+            "result": result
+        }
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Trained ML model is unavailable."
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
