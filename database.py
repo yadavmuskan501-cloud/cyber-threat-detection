@@ -14,7 +14,22 @@ if APP_ENV not in {"development", "test"}:
 
 ENV_FILE = ".env.test" if APP_ENV == "test" else ".env"
 
-config = dotenv_values(BASE_DIR / ENV_FILE)
+jenkins_env_file = os.getenv("MONGODB_TEST_ENV_FILE")
+
+if jenkins_env_file:
+    if APP_ENV != "test":
+        raise RuntimeError(
+            "Jenkins test credentials require test mode."
+        )
+
+    env_path = Path(jenkins_env_file)
+else:
+    env_path = BASE_DIR / ENV_FILE
+
+if not env_path.is_file():
+    raise RuntimeError("MongoDB configuration file not found.")
+
+config = dotenv_values(env_path)
 
 required_keys = [
     "MONGODB_USERNAME",

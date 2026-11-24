@@ -6,13 +6,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from database import db
 
-BASE_URL = "http://127.0.0.1:8000"
+
+BASE_URL = "http://127.0.0.1:8001"
 
 
 @pytest.fixture
 def driver():
     """Create and close a Chrome browser for each test."""
+
+    assert db.name == "sentinelai_test", "Unsafe database!"
 
     options = webdriver.ChromeOptions()
 
@@ -23,9 +27,11 @@ def driver():
 
     browser = webdriver.Chrome(options=options)
 
-    yield browser
+    try:
+        yield browser
 
-    browser.quit()
+    finally:
+        browser.quit()
 
 
 def test_login_page_loads(driver):
@@ -35,7 +41,9 @@ def test_login_page_loads(driver):
 
     assert driver.current_url == BASE_URL + "/"
 
-    login_form = driver.find_element(By.ID, "loginForm")
+    login_form = driver.find_element(
+        By.ID, "loginForm"
+    )
 
     assert login_form.is_displayed()
 
@@ -45,14 +53,24 @@ def test_successful_login(driver, test_account):
 
     driver.get(BASE_URL)
 
-    username_field = driver.find_element(By.ID, "loginUsername")
-    password_field = driver.find_element(By.ID, "loginPassword")
+    username_field = driver.find_element(
+        By.ID, "loginUsername"
+    )
+
+    password_field = driver.find_element(
+        By.ID, "loginPassword"
+    )
 
     username_field.clear()
     password_field.clear()
 
-    username_field.send_keys(test_account["username"])
-    password_field.send_keys(test_account["password"])
+    username_field.send_keys(
+        test_account["username"]
+    )
+
+    password_field.send_keys(
+        test_account["password"]
+    )
 
     driver.find_element(By.ID, "loginBtn").click()
 
@@ -60,7 +78,8 @@ def test_successful_login(driver, test_account):
 
     wait.until(
         EC.text_to_be_present_in_element(
-            (By.ID, "statusBox"), "AUTHENTICATED"
+            (By.ID, "statusBox"),
+            "AUTHENTICATED"
         )
     )
 
@@ -80,7 +99,9 @@ def test_successful_login(driver, test_account):
     assert username == test_account["username"]
     assert role == "Analyst"
 
-    wait.until(EC.url_contains("/dashboard"))
+    wait.until(
+        EC.url_contains("/dashboard")
+    )
 
     assert "/dashboard" in driver.current_url
 
@@ -90,8 +111,13 @@ def test_invalid_login_shows_error(driver):
 
     driver.get(BASE_URL)
 
-    username_field = driver.find_element(By.ID, "loginUsername")
-    password_field = driver.find_element(By.ID, "loginPassword")
+    username_field = driver.find_element(
+        By.ID, "loginUsername"
+    )
+
+    password_field = driver.find_element(
+        By.ID, "loginPassword"
+    )
 
     username_field.clear()
     password_field.clear()
@@ -105,6 +131,7 @@ def test_invalid_login_shows_error(driver):
 
     wait.until(
         EC.text_to_be_present_in_element(
-            (By.ID, "statusBox"), "ACCESS DENIED"
+            (By.ID, "statusBox"),
+            "ACCESS DENIED"
         )
     )

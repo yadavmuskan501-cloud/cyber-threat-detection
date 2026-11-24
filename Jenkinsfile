@@ -85,85 +85,48 @@ pipeline {
 
         stage('Run Automated Tests') {
             steps {
-                script {
-
-                    def configCreated = false
-
-                    try {
-
-                        echo 'Checking test environment...'
-
-                        powershell '''
-                            $ErrorActionPreference = 'Stop'
-
-                            if (Test-Path '.env.test') {
-                                throw 'Existing .env.test found. Remove it securely before continuing.'
-                            }
-
-                            if (Test-Path 'test-results.xml') {
-                                Remove-Item 'test-results.xml' -Force
-                            }
-
-                            $existing = Get-NetTCPConnection `
-                                -LocalPort 8000 `
-                                -State Listen `
-                                -ErrorAction SilentlyContinue
-
-                            if ($existing) {
-                                throw 'Port 8000 is already occupied.'
-                            }
-
-                            if (Test-Path '.jenkins-server.pid') {
-                                Remove-Item '.jenkins-server.pid' -Force
-                            }
-                        '''
-
-                        echo 'Configuring MongoDB testing credentials...'
-
-                        withCredentials([
-                            file(
-                                credentialsId: 'sentinel_mongodb_test',
-                                variable: 'MONGO_CONFIG'
-                            )
-                        ]) {
-
-                            configCreated = true
+                withCredentials([
+                    file(
+                        credentialsId: 'sentinel_mongodb_test',
+                        variable: 'MONGODB_TEST_ENV_FILE'
+                    )
+                ]) {
+                    script {
+                        try {
+                            echo 'Checking port 8001 before starting test server...'
 
                             powershell '''
                                 $ErrorActionPreference = 'Stop'
 
-                                Copy-Item `
-                                    -LiteralPath $env:MONGO_CONFIG `
-                                    -Destination '.env.test'
+                                if (Test-Path 'test-results.xml') {
+                                    Remove-Item 'test-results.xml' -Force
+                                }
 
-                                Write-Host 'SUCCESS: Test configuration installed.'
+                                $existing = Get-NetTCPConnection `
+                                    -LocalPort 8001 `
+                                    -State Listen `
+                                    -ErrorAction SilentlyContinue
+
+                                if ($existing) {
+                                    throw 'Port 8001 is already occupied. Refusing to use an unrelated server.'
+                                }
+
+                                if (Test-Path '.jenkins-server.pid') {
+                                    Remove-Item '.jenkins-server.pid' -Force
+                                }
                             '''
 
                             echo 'Validating MongoDB test configuration...'
 
                             bat '''
                                 @echo off
-
-                                ".jenkins-venv\\Scripts\\python.exe" -c "from dotenv import dotenv_values; c=dotenv_values('.env.test'); assert all(c.get(k) for k in ['MONGODB_USERNAME','MONGODB_PASSWORD','MONGODB_HOST','MONGODB_DB_NAME']), 'Missing MongoDB configuration'; assert c['MONGODB_DB_NAME']=='sentinelai_test', 'Unsafe database name'; assert c['MONGODB_USERNAME']=='sentinelai_test_user', 'Unsafe database user'; print('SUCCESS: Test database configuration validated')"
-
-                                if errorlevel 1 exit /b 1
-                            '''
-
-                            echo 'Checking MongoDB connectivity...'
-
-                            bat '''
-                                @echo off
-
-                                ".jenkins-venv\\Scripts\\python.exe" -c "from database import client; client.admin.command('ping'); print('SUCCESS: MongoDB connection verified')"
-
+                                ".jenkins-venv\\Scripts\\python.exe" -c "from database import db, init_database; assert db.name == 'sentinelai_test'; init_database(); print('SUCCESS: MongoDB test database verified')"
                                 if errorlevel 1 exit /b 1
                             '''
 
                             echo 'Starting temporary Sentinel AI FastAPI server...'
 
                             powershell '''
-                                $ErrorActionPreference = 'Stop'
-
                                 $python = Join-Path $PWD.Path '.jenkins-venv\\Scripts\\python.exe'
 
                                 $server = Start-Process `
@@ -175,10 +138,8 @@ pipeline {
                                         '--host',
                                         '127.0.0.1',
                                         '--port',
-                                        '8000'
+                                        '8001'
                                     ) `
-                                    -RedirectStandardOutput '.jenkins-server-out.log' `
-                                    -RedirectStandardError '.jenkins-server-error.log' `
                                     -WorkingDirectory $PWD.Path `
                                     -PassThru
 
@@ -195,22 +156,9 @@ pipeline {
                                 $ready = $false
 
                                 for ($i = 1; $i -le 30; $i++) {
-
-                                    $serverPid = Get-Content '.jenkins-server.pid' |
-                                        Select-Object -First 1
-
-                                    $process = Get-Process `
-                                        -Id ([int]$serverPid) `
-                                        -ErrorAction SilentlyContinue
-
-                                    if (-not $process) {
-                                        Write-Host 'ERROR: FastAPI server exited.'
-                                        break
-                                    }
-
                                     try {
                                         $response = Invoke-WebRequest `
-                                            -Uri 'http://127.0.0.1:8000/' `
+                                            -Uri 'http://127.0.0.1:8001/' `
                                             -UseBasicParsing `
                                             -TimeoutSec 3
 
@@ -230,98 +178,34 @@ pipeline {
                                 }
 
                                 if (-not $ready) {
-                                    throw 'Sentinel AI login page did not become ready. Inspect the server error log privately.'
+                                    throw 'Sentinel AI login page did not become ready.'
                                 }
 
                                 Write-Host 'SUCCESS: Sentinel AI login page is ready.'
                             '''
+                         echo 'Running automated tests with headless Chrome...'   
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        bat '''
+            @echo off
 
-                            echo 'Preparing Selenium test account...'
+            if exist test-results.xml del /q test-results.xml
 
-                            powershell '''
-                                $baseUrl = 'http://127.0.0.1:8000'
+            ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
+            if errorlevel 1 exit /b 1
 
-                                $credentials = @{
-                                    username = 'analyst2'
-                                    email    = 'analyst2@example.com'
-                                    password = 'ExamplePass123!'
-                                }
-
-                                $registrationBody = $credentials |
-                                    ConvertTo-Json
-
-                                $loginBody = @{
-                                    username = $credentials.username
-                                    password = $credentials.password
-                                } | ConvertTo-Json
-
-                                try {
-                                    $null = Invoke-RestMethod `
-                                        -Uri "$baseUrl/api/auth/register" `
-                                        -Method POST `
-                                        -ContentType 'application/json' `
-                                        -Body $registrationBody `
-                                        -ErrorAction Stop
-
-                                    Write-Host 'Selenium test account registered.'
-                                }
-                                catch {
-                                    Write-Host 'Registration unsuccessful; checking existing account.'
-                                }
-
-                                try {
-                                    $login = Invoke-RestMethod `
-                                        -Uri "$baseUrl/api/auth/login" `
-                                        -Method POST `
-                                        -ContentType 'application/json' `
-                                        -Body $loginBody `
-                                        -ErrorAction Stop
-
-                                    if ($login.status -ne 'Authenticated') {
-                                        throw 'Unexpected authentication response.'
-                                    }
-
-                                    Write-Host 'SUCCESS: Selenium test account authenticated.'
-                                }
-                                catch {
-                                    throw 'Selenium test account setup failed.'
-                                }
-                            '''
-
-                            echo 'Running automated tests with headless Chrome...'
-
-                            catchError(
-                                buildResult: 'FAILURE',
-                                stageResult: 'FAILURE'
-                            ) {
-                                bat '''
-                                    @echo off
-
-                                    ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
-
-                                    if errorlevel 1 exit /b 1
-
-                                    echo SUCCESS: All automated tests passed
-                                '''
-                            }
+            echo SUCCESS: All automated tests passed
+        '''
+    }
                         }
-                    }
+                        finally {
+                            echo 'Stopping temporary Sentinel AI server...'
 
-                    finally {
-
-                        echo 'Stopping temporary Sentinel AI server...'
-
-                        try {
                             powershell '''
-                                $ErrorActionPreference = 'Stop'
-
                                 if (Test-Path '.jenkins-server.pid') {
-
                                     $serverPid = Get-Content '.jenkins-server.pid' |
                                         Select-Object -First 1
 
                                     if ($serverPid -match '^\\d+$') {
-
                                         $serverProcess = Get-CimInstance Win32_Process `
                                             -Filter "ProcessId = $serverPid" `
                                             -ErrorAction SilentlyContinue
@@ -333,7 +217,7 @@ pipeline {
                                             Stop-Process `
                                                 -Id ([int]$serverPid) `
                                                 -Force `
-                                                -ErrorAction Stop
+                                                -ErrorAction SilentlyContinue
                                         }
                                     }
 
@@ -342,23 +226,6 @@ pipeline {
 
                                 Write-Host 'Temporary server cleanup completed.'
                             '''
-                        }
-
-                        finally {
-                            if (configCreated) {
-
-                                echo 'Removing temporary MongoDB configuration...'
-
-                                powershell '''
-                                    $ErrorActionPreference = 'Stop'
-
-                                    if (Test-Path '.env.test') {
-                                        Remove-Item '.env.test' -Force
-                                    }
-
-                                    Write-Host 'SUCCESS: Temporary configuration removed.'
-                                '''
-                            }
                         }
                     }
                 }
@@ -383,7 +250,6 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-
                 echo 'Building Sentinel AI Docker image...'
 
                 bat '''
@@ -391,12 +257,7 @@ pipeline {
 
                     if exist .env.test exit /b 1
                     if exist .env exit /b 1
-
-                    if exist .jenkins-server-out.log del /q .jenkins-server-out.log
-                    if exist .jenkins-server-error.log del /q .jenkins-server-error.log
-
                     "%DOCKER_BIN%\\docker.exe" build -t sentinel-ai:jenkins .
-
                     if errorlevel 1 exit /b 1
 
                     echo SUCCESS: Docker image built
@@ -407,7 +268,6 @@ pipeline {
 
     post {
         always {
-
             echo 'Publishing automated test results...'
 
             junit allowEmptyResults: true,
@@ -426,3 +286,4 @@ pipeline {
         }
     }
 }
+

@@ -1,10 +1,22 @@
+from datetime import timedelta
+
+import pytest
 from fastapi.testclient import TestClient
-from main import app
 
-client = TestClient(app)
+from main import app, create_access_token
+from database import db
 
 
-def test_profile_rejects_invalid_token():
+@pytest.fixture
+def client():
+    assert db.name == "sentinelai_test", "Unsafe database!"
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def test_profile_rejects_invalid_token(client):
+
     response = client.get(
         "/api/auth/me",
         headers={
@@ -13,15 +25,12 @@ def test_profile_rejects_invalid_token():
     )
 
     assert response.status_code in (401, 403)
-    
-    
-from datetime import timedelta
-from main import create_access_token
 
 
-def test_expired_jwt_token_rejected():
+def test_expired_jwt_token_rejected(client):
+
     expired_token = create_access_token(
-        data={"sub": "analyst1"},
+        data={"sub": "expired_test_user"},
         expires_delta=timedelta(seconds=-10)
     )
 

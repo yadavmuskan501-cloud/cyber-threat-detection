@@ -31,9 +31,13 @@ def pytest_sessionstart(session):
 
 @pytest.fixture(scope="session")
 def test_account():
-    """Automatically register a unique test account."""
+    """Register and automatically clean up a test account."""
 
-    unique_id = uuid.uuid4().hex[:8]
+    from database import db, users_collection
+
+    assert db.name == "sentinelai_test", "Unsafe database!"
+
+    unique_id = uuid.uuid4().hex
 
     credentials = {
         "username": f"selenium_{unique_id}",
@@ -63,4 +67,22 @@ def test_account():
             f"Cannot connect to Sentinel AI test server: {error}"
         )
 
-    return credentials
+    account_filter = {
+        "username": credentials["username"],
+        "email": credentials["email"]
+    }
+
+    assert users_collection.find_one(account_filter), (
+        "Registered account not found in MongoDB test database."
+    )
+
+    try:
+        yield credentials
+
+    finally:
+        result = users_collection.delete_one(account_filter)
+
+        print(
+            "\nTest accounts removed:",
+            result.deleted_count
+        )
