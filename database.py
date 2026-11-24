@@ -2,15 +2,44 @@ import os
 
 from pathlib import Path
 from urllib.parse import quote_plus
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from pymongo import MongoClient, ReturnDocument
 
-load_dotenv(Path(__file__).resolve().parent / ".env")
+BASE_DIR = Path(__file__).resolve().parent
 
-username = quote_plus(os.environ["MONGODB_USERNAME"])
-password = quote_plus(os.environ["MONGODB_PASSWORD"])
-host = os.environ["MONGODB_HOST"]
-db_name = os.environ["MONGODB_DB_NAME"]
+APP_ENV = os.getenv("SENTINEL_ENV", "development")
+
+if APP_ENV not in {"development", "test"}:
+    raise RuntimeError("Invalid SENTINEL_ENV value.")
+
+ENV_FILE = ".env.test" if APP_ENV == "test" else ".env"
+
+config = dotenv_values(BASE_DIR / ENV_FILE)
+
+required_keys = [
+    "MONGODB_USERNAME",
+    "MONGODB_PASSWORD",
+    "MONGODB_HOST",
+    "MONGODB_DB_NAME"
+]
+
+for key in required_keys:
+    if not config.get(key):
+        raise RuntimeError(f"Missing configuration: {key}")
+
+db_name = config["MONGODB_DB_NAME"]
+
+# Prevent accidental access to application data during testing.
+if APP_ENV == "test":
+    if db_name != "sentinelai_test":
+        raise RuntimeError("Unsafe test database configuration.")
+
+    if config["MONGODB_USERNAME"] != "sentinelai_test_user":
+        raise RuntimeError("Invalid testing database user.")
+
+username = quote_plus(config["MONGODB_USERNAME"])
+password = quote_plus(config["MONGODB_PASSWORD"])
+host = config["MONGODB_HOST"]
 
 uri = (
     f"mongodb+srv://{username}:{password}@{host}/"
