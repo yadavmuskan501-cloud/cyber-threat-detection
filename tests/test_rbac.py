@@ -1,60 +1,82 @@
-
-import sqlite3
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
 
 import main
+from database import db, users_collection
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
-    # Use a separate temporary database.
-    monkeypatch.setattr(
-        main,
-        "DB_NAME",
-        str(tmp_path / "rbac_test.db")
-    )
+def client():
+    assert db.name == "sentinelai_test", "Unsafe database!"
 
-    main.init_database()
-    return TestClient(main.app)
+    with TestClient(main.app) as test_client:
+        yield test_client
 
 
-def register_and_login(client, username, role=None):
-    registration = {
-        "username": username,
-        "email": f"{username}@example.com",
-        "password": "SecureTest123!"
-    }
+@pytest.fixture
+def create_test_user(client):
+    created_users = []
 
-    if role:
-        registration["role"] = role
+    def create_user(username, role=None, promote=False):
 
-    response = client.post(
-        "/api/auth/register",
-        json=registration
-    )
+        assert db.name == "sentinelai_test"
 
-    assert response.status_code == 201
+        username = f"{username}_{uuid.uuid4().hex[:8]}"
 
-    login_response = client.post(
-        "/api/auth/login",
-        json={
+        registration = {
             "username": username,
+            "email": f"{username}@example.com",
             "password": "SecureTest123!"
         }
-    )
 
-    assert login_response.status_code == 200
+        if role:
+            registration["role"] = role
 
-    return login_response.json()["access_token"]
+        response = client.post(
+            "/api/auth/register",
+            json=registration
+        )
+
+        assert response.status_code == 201
+
+        created_users.append(username)
+
+        if promote:
+            result = users_collection.update_one(
+                {"username": username},
+                {"$set": {"role": "Admin"}}
+            )
+
+            assert result.modified_count == 1
+
+        login_response = client.post(
+            "/api/auth/login",
+            json={
+                "username": username,
+                "password": "SecureTest123!"
+            }
+        )
+
+        assert login_response.status_code == 200
+
+        return login_response.json()["access_token"]
+
+    yield create_user
+
+    # Remove only accounts created by this fixture.
+    assert db.name == "sentinelai_test"
+
+    if created_users:
+        users_collection.delete_many(
+            {"username": {"$in": created_users}}
+        )
 
 
-def test_analyst_can_view_threats(client):
-    token = register_and_login(
-        client,
-        "analyst_test"
-    )
+def test_analyst_can_view_threats(client, create_test_user):
+
+    token = create_test_user("analyst_test")
 
     response = client.get(
         "/api/rbac/threats",
@@ -64,11 +86,9 @@ def test_analyst_can_view_threats(client):
     assert response.status_code == 200
 
 
-def test_analyst_cannot_access_admin(client):
-    token = register_and_login(
-        client,
-        "analyst_restricted"
-    )
+def test_analyst_cannot_access_admin(client, create_test_user):
+
+    token = create_test_user("analyst_restricted")
 
     response = client.get(
         "/api/rbac/admin",
@@ -78,9 +98,9 @@ def test_analyst_cannot_access_admin(client):
     assert response.status_code == 403
 
 
-def test_registration_cannot_assign_admin(client):
-    token = register_and_login(
-        client,
+def test_registration_cannot_assign_admin(client, create_test_user):
+
+    token = create_test_user(
         "fake_admin",
         role="Admin"
     )
@@ -94,26 +114,12 @@ def test_registration_cannot_assign_admin(client):
     assert response.json()["profile"]["role"] == "Analyst"
 
 
-def test_admin_can_access_admin_endpoint(client):
-    # Set up a privileged user directly in the
-    # isolated test database, not via public registration.
-    with sqlite3.connect(main.DB_NAME) as conn:
-        conn.execute(
-            "UPDATE users SET role = ? WHERE username = ?",
-            ("Admin", "analyst1")
-        )
+def test_admin_can_access_admin_endpoint(client, create_test_user):
 
-    login_response = client.post(
-        "/api/auth/login",
-        json={
-            "username": "analyst1",
-            "password": "Sentinel2026!"
-        }
+    token = create_test_user(
+        "admin_test",
+        promote=True
     )
-
-    assert login_response.status_code == 200
-
-    token = login_response.json()["access_token"]
 
     response = client.get(
         "/api/rbac/admin",
@@ -124,26 +130,26 @@ def test_admin_can_access_admin_endpoint(client):
 
 
 def test_admin_endpoint_requires_authentication(client):
+
     response = client.get("/api/rbac/admin")
+
     assert response.status_code in (401, 403)
 
 
 def test_threats_endpoint_requires_authentication(client):
+
     response = client.get("/api/rbac/threats")
+
     assert response.status_code in (401, 403)
 
 
-def test_analyst_cannot_view_users(client):
-    token = register_and_login(
-        client,
-        "restricted_analyst"
-    )
+def test_analyst_cannot_view_users(client, create_test_user):
+
+    token = create_test_user("restricted_analyst")
 
     response = client.get(
         "/api/rbac/users",
-        headers={
-            "Authorization": f"Bearer {token}"
-        }
+        headers={"Authorization": f"Bearer {token}"}
     )
 
     assert response.status_code == 403

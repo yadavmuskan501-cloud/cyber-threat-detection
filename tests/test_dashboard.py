@@ -1,4 +1,3 @@
-
 import pytest
 import time
 
@@ -9,18 +8,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from test_selenium import (
-    driver,
-    BASE_URL,
-    TEST_USERNAME,
-    TEST_PASSWORD
-)
+from test_selenium import driver, BASE_URL
 
 from main import SECRET_KEY, ALGORITHM
 
 
-def login_to_dashboard(browser):
-    """Log in and wait for successful authentication and dashboard redirect."""
+def login_to_dashboard(browser, test_account):
+    """Log in using an automatically registered test account."""
 
     browser.get(BASE_URL)
 
@@ -30,59 +24,54 @@ def login_to_dashboard(browser):
     username_field.clear()
     password_field.clear()
 
-    username_field.send_keys(TEST_USERNAME)
-    password_field.send_keys(TEST_PASSWORD)
+    username_field.send_keys(test_account["username"])
+    password_field.send_keys(test_account["password"])
 
     browser.find_element(By.ID, "loginBtn").click()
 
     wait = WebDriverWait(browser, 15)
 
-    # Wait for the login response
-    status_box = wait.until(
-        EC.visibility_of_element_located((By.ID, "statusBox"))
+    wait.until(
+        EC.text_to_be_present_in_element(
+            (By.ID, "statusBox"), "AUTHENTICATED"
+        )
     )
 
-    if "AUTHENTICATED" not in status_box.text:
-        pytest.fail(f"Login failed: {status_box.text}")
-
-    # Verify that the authentication token was saved
     token = browser.execute_script(
         "return sessionStorage.getItem('token');"
     )
 
     assert token is not None, "Authentication token was not saved."
 
-    # Wait for dashboard redirect
     wait.until(EC.url_contains("/dashboard"))
 
-    # Wait until the username is displayed
     wait.until(
         lambda d: d.find_element(
             By.ID, "analystDisplay"
-        ).text == f"Analyst: {TEST_USERNAME}"
+        ).text == f"Analyst: {test_account['username']}"
     )
 
 
 # --------------------------------------------------
-# EXISTING DASHBOARD TESTS
+# DASHBOARD TESTS
 # --------------------------------------------------
 
-def test_dashboard_displays_username(driver):
+def test_dashboard_displays_username(driver, test_account):
     """Verify that the dashboard displays the logged-in username."""
 
-    login_to_dashboard(driver)
+    login_to_dashboard(driver, test_account)
 
     username = driver.find_element(
         By.ID, "analystDisplay"
     ).text
 
-    assert username == f"Analyst: {TEST_USERNAME}"
+    assert username == f"Analyst: {test_account['username']}"
 
 
-def test_dashboard_displays_role(driver):
-    """Verify that the dashboard displays the actual logged-in user's role."""
+def test_dashboard_displays_role(driver, test_account):
+    """Verify that the dashboard displays the actual user role."""
 
-    login_to_dashboard(driver)
+    login_to_dashboard(driver, test_account)
 
     wait = WebDriverWait(driver, 15)
 
@@ -94,7 +83,7 @@ def test_dashboard_displays_role(driver):
 
 
 def test_dashboard_redirects_without_token(driver):
-    """Verify that users without an authentication token are redirected."""
+    """Verify that unauthenticated users are redirected."""
 
     driver.get(BASE_URL + "/dashboard")
 
@@ -105,10 +94,10 @@ def test_dashboard_redirects_without_token(driver):
     assert driver.current_url == BASE_URL + "/"
 
 
-def test_logout_clears_session_and_redirects(driver):
-    """Verify logout clears the token and redirects to login."""
+def test_logout_clears_session_and_redirects(driver, test_account):
+    """Verify that logout clears the token and redirects to login."""
 
-    login_to_dashboard(driver)
+    login_to_dashboard(driver, test_account)
 
     logout_button = driver.find_element(
         By.XPATH, "//button[normalize-space()='Logout']"
@@ -118,27 +107,26 @@ def test_logout_clears_session_and_redirects(driver):
 
     wait = WebDriverWait(driver, 10)
 
-    # Wait for redirect to login page
     wait.until(EC.url_to_be(BASE_URL + "/"))
 
-    # Verify that the token has been removed
     token = driver.execute_script(
         "return sessionStorage.getItem('token');"
     )
 
     assert token is None, "Token was not cleared after logout."
-
     assert driver.current_url == BASE_URL + "/"
 
 
 # --------------------------------------------------
-# ADDITIONAL DASHBOARD SESSION SECURITY TESTS
+# DASHBOARD SESSION SECURITY TESTS
 # --------------------------------------------------
 
-def test_dashboard_remains_authenticated_after_refresh(driver):
-    """Verify that refreshing the dashboard preserves a valid session."""
+def test_dashboard_remains_authenticated_after_refresh(
+    driver, test_account
+):
+    """Verify that refreshing preserves a valid session."""
 
-    login_to_dashboard(driver)
+    login_to_dashboard(driver, test_account)
 
     driver.refresh()
 
@@ -149,18 +137,18 @@ def test_dashboard_remains_authenticated_after_refresh(driver):
     wait.until(
         lambda d: d.find_element(
             By.ID, "analystDisplay"
-        ).text == f"Analyst: {TEST_USERNAME}"
+        ).text == f"Analyst: {test_account['username']}"
     )
 
     token = driver.execute_script(
         "return sessionStorage.getItem('token');"
     )
 
-    assert token is not None, "Token was lost after dashboard refresh."
+    assert token is not None, "Token was lost after refresh."
 
 
 def test_dashboard_redirects_with_invalid_token(driver):
-    """Verify that an invalid token causes a redirect to login."""
+    """Verify that an invalid token redirects to login."""
 
     driver.get(BASE_URL)
 
@@ -181,13 +169,13 @@ def test_dashboard_redirects_with_invalid_token(driver):
     assert token is None, "Invalid token was not cleared."
 
 
-def test_dashboard_redirects_with_expired_token(driver):
-    """Verify that an expired JWT causes a redirect to login."""
+def test_dashboard_redirects_with_expired_token(driver, test_account):
+    """Verify that an expired JWT redirects to login."""
 
     now = datetime.now(timezone.utc)
 
     payload = {
-        "sub": TEST_USERNAME,
+        "sub": test_account["username"],
         "iat": now - timedelta(minutes=10),
         "exp": now - timedelta(minutes=5),
     }
@@ -218,12 +206,13 @@ def test_dashboard_redirects_with_expired_token(driver):
     assert token is None, "Expired token was not cleared."
 
 
-def test_browser_back_after_logout_does_not_restore_session(driver):
+def test_browser_back_after_logout_does_not_restore_session(
+    driver, test_account
+):
     """Inspect browser Back behavior after logout."""
 
-    login_to_dashboard(driver)
+    login_to_dashboard(driver, test_account)
 
-    # Log out
     driver.find_element(
         By.XPATH, "//button[normalize-space()='Logout']"
     ).click()
@@ -232,10 +221,8 @@ def test_browser_back_after_logout_does_not_restore_session(driver):
 
     wait.until(EC.url_to_be(BASE_URL + "/"))
 
-    # Press browser Back
     driver.back()
 
-    # Give browser history and dashboard JavaScript time to respond
     time.sleep(3)
 
     current_url = driver.current_url
@@ -257,10 +244,10 @@ def test_browser_back_after_logout_does_not_restore_session(driver):
             username = driver.find_element(
                 By.ID, "analystDisplay"
             ).text
+
         except Exception:
             username = "Dashboard username not visible"
 
         print("Dashboard username:", username)
 
-    # The session must remain cleared even if browser restores the page.
     assert token is None, "Session was restored after logout."

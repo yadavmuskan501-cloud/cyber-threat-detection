@@ -1,6 +1,11 @@
 
 import os
-import sqlite3
+from pymongo.errors import DuplicateKeyError
+from database import (
+    users_collection,
+    get_next_user_id,
+    init_database as initialize_mongodb
+)
 import bcrypt
 
 from datetime import datetime, timedelta, timezone
@@ -88,7 +93,7 @@ SECRET_KEY = os.getenv(
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
-DB_NAME = "sentinel.db"
+
 
 security = HTTPBearer()
 
@@ -106,53 +111,8 @@ ADMIN_ROLES = {ROLE_ADMIN, "Incident Commander"}
 # ================= DATABASE INITIALIZATION =================
 
 def init_database():
-    conn = sqlite3.connect(DB_NAME)
+    initialize_mongodb()
 
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                hashed_password TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'Analyst',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        conn.commit()
-
-        # Preserve the existing development account.
-        cursor.execute(
-            "SELECT id FROM users WHERE username = ?",
-            ("analyst1",)
-        )
-
-        if not cursor.fetchone():
-            salt = bcrypt.gensalt(rounds=12)
-
-            default_hash = bcrypt.hashpw(
-                "Sentinel2026!".encode("utf-8"),
-                salt
-            ).decode("utf-8")
-
-            cursor.execute("""
-                INSERT INTO users
-                (username, email, hashed_password, role)
-                VALUES (?, ?, ?, ?)
-            """, (
-                "analyst1",
-                "analyst1@sentinelai.com",
-                default_hash,
-                "Incident Commander"
-            ))
-
-            conn.commit()
-
-    finally:
-        conn.close()
 
 
 init_database()
@@ -230,14 +190,10 @@ def decode_access_token(token: str) -> dict:
 
 # ================= AUTHENTICATION DEPENDENCY =================
 
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-
-    token = credentials.credentials
-
-    payload = decode_access_token(token)
-
+    payload = decode_access_token(credentials.credentials)
     username = payload.get("sub")
 
     if not username or not isinstance(username, str):
@@ -246,21 +202,11 @@ async def get_current_user(
             detail="Invalid token payload."
         )
 
-    conn = sqlite3.connect(DB_NAME)
-
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT id, username, email, role
-            FROM users
-            WHERE username = ?
-        """, (username,))
-
-        user = cursor.fetchone()
-
-    finally:
-        conn.close()
+    user = users_collection.find_one(
+        {"username": username},
+        {"_id": 0, "id": 1, "username": 1,
+         "email": 1, "role": 1}
+    )
 
     if not user:
         raise HTTPException(
@@ -268,12 +214,8 @@ async def get_current_user(
             detail="User account not found."
         )
 
-    return {
-        "id": user[0],
-        "username": user[1],
-        "email": user[2],
-        "role": user[3]
-    }
+    return user
+
 
 
 # ================= RBAC DEPENDENCIES =================
@@ -394,7 +336,7 @@ Users cannot assign themselves Admin privileges.
         }
     }
 )
-async def register_user(user: RegisterRequest):
+def register_user(user: RegisterRequest):
 
     username = user.username.strip().lower()
     email = str(user.email).strip().lower()
@@ -408,64 +350,46 @@ async def register_user(user: RegisterRequest):
     if len(user.password) < 8:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Security Policy: Password must be "
-                "at least 8 characters."
-            )
+            detail="Security Policy: Password must be at least 8 characters."
         )
 
-    conn = sqlite3.connect(DB_NAME)
+    existing = users_collection.find_one({
+        "$or": [
+            {"username": username},
+            {"email": email}
+        ]
+    })
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Conflict: Username or Email is already registered."
+        )
 
     try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT id FROM users
-            WHERE username = ? OR email = ?
-        """, (username, email))
-
-        if cursor.fetchone():
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Conflict: Username or Email "
-                    "is already registered."
-                )
+        users_collection.insert_one({
+            "id": get_next_user_id(),
+            "username": username,
+            "email": email,
+            "hashed_password": hash_password(user.password),
+            "role": ROLE_ANALYST,
+            "created_at": datetime.now(timezone.utc).strftime(
+                "%Y-%m-%d %H:%M:%S"
             )
+        })
 
-        hashed_pwd = hash_password(user.password)
-
-        # SECURITY: Public registration cannot assign Admin.
-        cursor.execute("""
-            INSERT INTO users
-            (username, email, hashed_password, role)
-            VALUES (?, ?, ?, ?)
-        """, (
-            username,
-            email,
-            hashed_pwd,
-            ROLE_ANALYST
-        ))
-
-        conn.commit()
-
-    except sqlite3.IntegrityError:
+    except DuplicateKeyError:
         raise HTTPException(
             status_code=400,
             detail="Username or Email already exists."
         )
 
-    finally:
-        conn.close()
-
     return {
         "status": "Success",
-        "message": (
-            f"Analyst account '{username}' "
-            "created successfully."
-        ),
+        "message": f"Analyst account '{username}' created successfully.",
         "role": ROLE_ANALYST
     }
+
 
 
 # ================= LOGIN =================
@@ -493,59 +417,42 @@ the Swagger Authorize button.
         }
     }
 )
-async def login(credentials: LoginRequest):
+def login(credentials: LoginRequest):
 
     username = credentials.username.strip().lower()
 
-    conn = sqlite3.connect(DB_NAME)
-
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT id, username, email,
-                   hashed_password, role
-            FROM users
-            WHERE username = ?
-        """, (username,))
-
-        user = cursor.fetchone()
-
-    finally:
-        conn.close()
+    user = users_collection.find_one(
+        {"username": username}
+    )
 
     if not user or not verify_password(
         credentials.password,
-        user[3]
+        user["hashed_password"]
     ):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=(
-                "Access Denied: Invalid Username "
-                "or Cryptographic Passkey."
-            )
+            status_code=401,
+            detail="Access Denied: Invalid Username or Cryptographic Passkey."
         )
 
     token_payload = {
-        "sub": user[1],
-        "email": user[2],
-        "role": user[4]
+        "sub": user["username"],
+        "email": user["email"],
+        "role": user["role"]
     }
 
-    jwt_token = create_access_token(
-        data=token_payload
-    )
+    jwt_token = create_access_token(data=token_payload)
 
     return {
         "status": "Authenticated",
         "access_token": jwt_token,
         "token_type": "bearer",
         "user": {
-            "username": user[1],
-            "email": user[2],
-            "role": user[4]
+            "username": user["username"],
+            "email": user["email"],
+            "role": user["role"]
         }
     }
+
 
 
 # ================= PROTECTED PROFILE =================
@@ -675,40 +582,21 @@ A valid JWT Bearer token is required.
         }
     }
 )
-async def list_users(
+def list_users(
     current_user: dict = Depends(require_admin)
 ):
 
-    conn = sqlite3.connect(DB_NAME)
-
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT id, username, email, role
-            FROM users
-            ORDER BY id
-        """)
-
-        rows = cursor.fetchall()
-
-    finally:
-        conn.close()
-
-    users = [
-        {
-            "id": row[0],
-            "username": row[1],
-            "email": row[2],
-            "role": row[3]
-        }
-        for row in rows
-    ]
+    users = list(users_collection.find(
+        {},
+        {"_id": 0, "id": 1, "username": 1,
+         "email": 1, "role": 1}
+    ).sort("id", 1))
 
     return {
         "status": "Authorized",
         "users": users
     }
+
 
 
 
