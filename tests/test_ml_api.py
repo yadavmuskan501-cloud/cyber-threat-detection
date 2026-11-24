@@ -1,54 +1,58 @@
-
-import sqlite3
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
 
 import main
+from database import db, users_collection
 from ml.predict import load_model
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
-    # Use a temporary database, not the real sentinel.db
-    test_db = tmp_path / "test_sentinel.db"
-
-    conn = sqlite3.connect(test_db)
-    conn.execute("""
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY,
-            username TEXT,
-            email TEXT,
-            role TEXT
-        )
-    """)
-    conn.execute(
-        "INSERT INTO users VALUES (?, ?, ?, ?)",
-        (1, "ml_test_analyst", "test@example.com", main.ROLE_ANALYST)
-    )
-    conn.commit()
-    conn.close()
-
-    monkeypatch.setattr(main, "DB_NAME", str(test_db))
+def client():
+    assert db.name == "sentinelai_test", "Unsafe database!"
 
     with TestClient(main.app) as test_client:
         yield test_client
 
 
 @pytest.fixture
-def auth_headers():
-    token = main.create_access_token(
-        {"sub": "ml_test_analyst"}
-    )
-    return {"Authorization": f"Bearer {token}"}
+def auth_headers(client):
+    unique_id = uuid.uuid4().hex[:8]
+    username = f"ml_test_{unique_id}"
+
+    credentials = {
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "MLTestPass123!"
+    }
+
+    try:
+        response = client.post(
+            "/api/auth/register",
+            json=credentials
+        )
+
+        assert response.status_code == 201, response.text
+
+        token = main.create_access_token(
+            {"sub": username}
+        )
+
+        yield {
+            "Authorization": f"Bearer {token}"
+        }
+
+    finally:
+        users_collection.delete_one(
+            {"username": username}
+        )
 
 
 @pytest.fixture
 def valid_features():
     artifact = load_model()
 
-    # Valid feature names, with missing numeric values
-    # handled by the trained imputer.
     return {
         feature: None
         for feature in artifact["features"]
@@ -83,7 +87,9 @@ def test_missing_jwt(client, valid_features):
 def test_invalid_jwt(client, valid_features):
     response = client.post(
         "/api/ml/predict",
-        headers={"Authorization": "Bearer invalid-token"},
+        headers={
+            "Authorization": "Bearer invalid-token"
+        },
         json={"features": valid_features}
     )
 
