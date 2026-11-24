@@ -82,7 +82,36 @@ pipeline {
                 '''
             }
         }
+        stage('Provision ML Model') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'sentinel_ml_model',
+                        variable: 'ML_MODEL_FILE'
+                    )
+                ]) {
+                    powershell '''
+                        $ErrorActionPreference = 'Stop'
 
+                        New-Item -ItemType Directory `
+                            -Force 'ml/models' | Out-Null
+
+                        Copy-Item `
+                            -LiteralPath $env:ML_MODEL_FILE `
+                            -Destination 'ml/models/random_forest_model.pkl' `
+                            -Force
+
+                        $model = Get-Item 'ml/models/random_forest_model.pkl'
+
+                        if ($model.Length -le 0) {
+                            throw 'ML model file is empty.'
+                        }
+
+                        Write-Host 'SUCCESS: ML model provisioned automatically'
+                    '''
+                }
+            }
+        }
         stage('Run Automated Tests') {
             steps {
                 withCredentials([
