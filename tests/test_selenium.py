@@ -9,13 +9,11 @@ from selenium.webdriver.support import expected_conditions as EC
 
 BASE_URL = "http://127.0.0.1:8000"
 
-TEST_USERNAME = "tester"
-TEST_PASSWORD = "tester1234"
-
 
 @pytest.fixture
 def driver():
     """Create and close a Chrome browser for each test."""
+
     options = webdriver.ChromeOptions()
 
     if os.getenv("HEADLESS") == "1":
@@ -32,6 +30,7 @@ def driver():
 
 def test_login_page_loads(driver):
     """Verify that the login page loads correctly."""
+
     driver.get(BASE_URL)
 
     assert driver.current_url == BASE_URL + "/"
@@ -41,8 +40,9 @@ def test_login_page_loads(driver):
     assert login_form.is_displayed()
 
 
-def test_successful_login(driver):
-    """Verify successful login, JWT storage and dashboard redirect."""
+def test_successful_login(driver, test_account):
+    """Verify login using an automatically registered account."""
+
     driver.get(BASE_URL)
 
     username_field = driver.find_element(By.ID, "loginUsername")
@@ -51,22 +51,19 @@ def test_successful_login(driver):
     username_field.clear()
     password_field.clear()
 
-    username_field.send_keys(TEST_USERNAME)
-    password_field.send_keys(TEST_PASSWORD)
+    username_field.send_keys(test_account["username"])
+    password_field.send_keys(test_account["password"])
 
     driver.find_element(By.ID, "loginBtn").click()
 
     wait = WebDriverWait(driver, 15)
 
-    # Wait for the backend login response.
-    status_box = wait.until(
-        EC.visibility_of_element_located((By.ID, "statusBox"))
+    wait.until(
+        EC.text_to_be_present_in_element(
+            (By.ID, "statusBox"), "AUTHENTICATED"
+        )
     )
 
-    if "AUTHENTICATED" not in status_box.text:
-        pytest.fail(f"Login failed: {status_box.text}")
-
-    # Verify authentication details are stored.
     token = driver.execute_script(
         "return sessionStorage.getItem('token');"
     )
@@ -80,10 +77,9 @@ def test_successful_login(driver):
     )
 
     assert token is not None
-    assert username == TEST_USERNAME
-    assert role is not None
+    assert username == test_account["username"]
+    assert role == "Analyst"
 
-    # Wait for dashboard redirect.
     wait.until(EC.url_contains("/dashboard"))
 
     assert "/dashboard" in driver.current_url
@@ -91,6 +87,7 @@ def test_successful_login(driver):
 
 def test_invalid_login_shows_error(driver):
     """Verify that invalid credentials display an error."""
+
     driver.get(BASE_URL)
 
     username_field = driver.find_element(By.ID, "loginUsername")
@@ -106,8 +103,8 @@ def test_invalid_login_shows_error(driver):
 
     wait = WebDriverWait(driver, 10)
 
-    status_box = wait.until(
-        EC.visibility_of_element_located((By.ID, "statusBox"))
+    wait.until(
+        EC.text_to_be_present_in_element(
+            (By.ID, "statusBox"), "ACCESS DENIED"
+        )
     )
-
-    assert "ACCESS DENIED" in status_box.text
