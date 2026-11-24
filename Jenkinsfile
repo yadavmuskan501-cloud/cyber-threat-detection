@@ -6,6 +6,7 @@ pipeline {
         DOCKER_BIN = 'C:\\Users\\cpulk\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
         PYTHON_EXE = 'C:\\Users\\cpulk\\AppData\\Local\\Python\\pythoncore-3.12-64\\python.exe'
         HEADLESS = '1'
+        SENTINEL_ENV = 'test'
     }
 
     options {
@@ -84,127 +85,134 @@ pipeline {
 
         stage('Run Automated Tests') {
             steps {
-                script {
-                    try {
-                        echo 'Checking port 8000 before starting test server...'
+                withCredentials([
+                    file(
+                        credentialsId: 'sentinel-mongodb-test-env',
+                        variable: 'MONGODB_TEST_ENV_FILE'
+                    )
+                ]) {
+                    script {
+                        try {
+                            echo 'Checking port 8001 before starting test server...'
 
-                        powershell '''
-                            $existing = Get-NetTCPConnection `
-                                -LocalPort 8000 `
-                                -State Listen `
-                                -ErrorAction SilentlyContinue
+                            powershell '''
+                                $existing = Get-NetTCPConnection `
+                                    -LocalPort 8001 `
+                                    -State Listen `
+                                    -ErrorAction SilentlyContinue
 
-                            if ($existing) {
-                                throw 'Port 8000 is already occupied. Refusing to use an unrelated server.'
-                            }
+                                if ($existing) {
+                                    throw 'Port 8001 is already occupied. Refusing to use an unrelated server.'
+                                }
 
-                            if (Test-Path '.jenkins-server.pid') {
-                                Remove-Item '.jenkins-server.pid' -Force
-                            }
-                        '''
+                                if (Test-Path '.jenkins-server.pid') {
+                                    Remove-Item '.jenkins-server.pid' -Force
+                                }
+                            '''
 
-                        echo 'Starting temporary Sentinel AI FastAPI server...'
+                            echo 'Starting temporary Sentinel AI FastAPI server...'
 
-                        powershell '''
-                            $python = Join-Path $PWD.Path '.jenkins-venv\\Scripts\\python.exe'
+                            powershell '''
+                                $python = Join-Path $PWD.Path '.jenkins-venv\\Scripts\\python.exe'
 
-                            $server = Start-Process `
-                                -FilePath $python `
-                                -ArgumentList @(
-                                    '-m',
-                                    'uvicorn',
-                                    'main:app',
-                                    '--host',
-                                    '127.0.0.1',
-                                    '--port',
-                                    '8000'
-                                ) `
-                                -WorkingDirectory $PWD.Path `
-                                -PassThru
+                                $server = Start-Process `
+                                    -FilePath $python `
+                                    -ArgumentList @(
+                                        '-m',
+                                        'uvicorn',
+                                        'main:app',
+                                        '--host',
+                                        '127.0.0.1',
+                                        '--port',
+                                        '8001'
+                                    ) `
+                                    -WorkingDirectory $PWD.Path `
+                                    -PassThru
 
-                            Set-Content `
-                                -Path '.jenkins-server.pid' `
-                                -Value $server.Id
+                                Set-Content `
+                                    -Path '.jenkins-server.pid' `
+                                    -Value $server.Id
 
-                            Write-Host "Started test server PID: $($server.Id)"
-                        '''
+                                Write-Host "Started test server PID: $($server.Id)"
+                            '''
 
-                        echo 'Waiting for Sentinel AI login page...'
+                            echo 'Waiting for Sentinel AI login page...'
 
-                        powershell '''
-                            $ready = $false
+                            powershell '''
+                                $ready = $false
 
-                            for ($i = 1; $i -le 30; $i++) {
-                                try {
-                                    $response = Invoke-WebRequest `
-                                        -Uri 'http://127.0.0.1:8000/' `
-                                        -UseBasicParsing `
-                                        -TimeoutSec 3
+                                for ($i = 1; $i -le 30; $i++) {
+                                    try {
+                                        $response = Invoke-WebRequest `
+                                            -Uri 'http://127.0.0.1:8001/' `
+                                            -UseBasicParsing `
+                                            -TimeoutSec 3
 
-                                    if (
-                                        $response.StatusCode -eq 200 -and
-                                        $response.Content -match 'loginUsername'
-                                    ) {
-                                        $ready = $true
-                                        break
+                                        if (
+                                            $response.StatusCode -eq 200 -and
+                                            $response.Content -match 'loginUsername'
+                                        ) {
+                                            $ready = $true
+                                            break
+                                        }
                                     }
+                                    catch {
+                                        Write-Host "Waiting for server: attempt $i"
+                                    }
+
+                                    Start-Sleep -Seconds 2
                                 }
-                                catch {
-                                    Write-Host "Waiting for server: attempt $i"
+
+                                if (-not $ready) {
+                                    throw 'Sentinel AI login page did not become ready.'
                                 }
 
-                                Start-Sleep -Seconds 2
-                            }
+                                Write-Host 'SUCCESS: Sentinel AI login page is ready.'
+                            '''
+                         echo 'Running automated tests with headless Chrome...'   
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        bat '''
+            @echo off
 
-                            if (-not $ready) {
-                                throw 'Sentinel AI login page did not become ready.'
-                            }
+            if exist test-results.xml del /q test-results.xml
 
-                            Write-Host 'SUCCESS: Sentinel AI login page is ready.'
-                        '''
-                     echo 'Running automated tests with headless Chrome...'   
-catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-    bat '''
-        @echo off
+            ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
+            if errorlevel 1 exit /b 1
 
-        if exist test-results.xml del /q test-results.xml
+            echo SUCCESS: All automated tests passed
+        '''
+    }
+                        }
+                        finally {
+                            echo 'Stopping temporary Sentinel AI server...'
 
-        ".jenkins-venv\\Scripts\\python.exe" -m pytest -v tests --junitxml=test-results.xml
-        if errorlevel 1 exit /b 1
+                            powershell '''
+                                if (Test-Path '.jenkins-server.pid') {
+                                    $serverPid = Get-Content '.jenkins-server.pid' |
+                                        Select-Object -First 1
 
-        echo SUCCESS: All automated tests passed
-    '''
-}
-                    }
-                    finally {
-                        echo 'Stopping temporary Sentinel AI server...'
-
-                        powershell '''
-                            if (Test-Path '.jenkins-server.pid') {
-                                $serverPid = Get-Content '.jenkins-server.pid' |
-                                    Select-Object -First 1
-
-                                if ($serverPid -match '^\\d+$') {
-                                    $serverProcess = Get-CimInstance Win32_Process `
-                                        -Filter "ProcessId = $serverPid" `
-                                        -ErrorAction SilentlyContinue
-
-                                    if (
-                                        $serverProcess -and
-                                        $serverProcess.CommandLine -match 'uvicorn'
-                                    ) {
-                                        Stop-Process `
-                                            -Id ([int]$serverPid) `
-                                            -Force `
+                                    if ($serverPid -match '^\\d+$') {
+                                        $serverProcess = Get-CimInstance Win32_Process `
+                                            -Filter "ProcessId = $serverPid" `
                                             -ErrorAction SilentlyContinue
+
+                                        if (
+                                            $serverProcess -and
+                                            $serverProcess.CommandLine -match 'uvicorn'
+                                        ) {
+                                            Stop-Process `
+                                                -Id ([int]$serverPid) `
+                                                -Force `
+                                                -ErrorAction SilentlyContinue
+                                        }
                                     }
+
+                                    Remove-Item '.jenkins-server.pid' -Force
                                 }
 
-                                Remove-Item '.jenkins-server.pid' -Force
-                            }
-
-                            Write-Host 'Temporary server cleanup completed.'
-                        '''
+                                Write-Host 'Temporary server cleanup completed.'
+                            '''
+                        }
                     }
                 }
             }
@@ -262,3 +270,4 @@ catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
         }
     }
 }
+
