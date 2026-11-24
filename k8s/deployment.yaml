@@ -1,0 +1,30 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentinelai-deployment
+  labels:
+    app: sentinelai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sentinelai
+  template:
+    metadata:
+      labels:
+        app: sentinelai
+    spec:
+      containers:
+        - name: sentinelai
+          image: sentinelai:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
