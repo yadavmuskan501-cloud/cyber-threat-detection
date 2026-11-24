@@ -8,4 +8,4 @@ venv/
 /ml/data/*.csv
 # Trained ML models
 /ml/models/
-.env
+.env.test
