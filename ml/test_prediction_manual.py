@@ -1,4 +1,5 @@
 
+import os
 import json
 from pathlib import Path
 
@@ -7,12 +8,24 @@ import pandas as pd
 from predict import load_model, predict_threat
 
 
+# Dataset path: defaults to the current user's Downloads folder.
+# Teammates can override it using the DATASET_PATH environment variable.
 DATASET_PATH = Path(
-    r"C:\Users\Dell\Downloads\archive (2)\combine.csv"
+    os.getenv(
+        "DATASET_PATH",
+        str(Path.home() / "Downloads" / "combine.csv")
+    )
 )
 
 artifact = load_model()
 feature_names = artifact["features"]
+
+# Check whether the dataset exists
+if not DATASET_PATH.exists():
+    raise FileNotFoundError(
+        f"Dataset not found: {DATASET_PATH}\n"
+        "Place combine.csv in your Downloads folder or set DATASET_PATH."
+    )
 
 # Read one actual dataset record
 sample = pd.read_csv(DATASET_PATH, nrows=1)

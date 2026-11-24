@@ -8,31 +8,39 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background: #030712; }
-    .glass-card { background: rgba(13, 23, 38, 0.78); backdrop-filter: blur(14px); border: 1px solid rgba(52, 211, 153, 0.22); }
+    .glass-card {
+      background: rgba(13, 23, 38, 0.78);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(52, 211, 153, 0.22);
+    }
     @keyframes highlightRow {
       0% { background-color: rgba(244, 63, 94, 0.35); }
       100% { background-color: transparent; }
     }
-    .new-threat-anim {
-      animation: highlightRow 2.5s ease-out;
-    }
+    .new-threat-anim { animation: highlightRow 2.5s ease-out; }
   </style>
 </head>
+
 <body class="text-slate-100 min-h-screen p-6 font-sans" style="visibility: hidden;">
 
   <!-- Top Navigation Bar -->
   <header class="flex flex-wrap items-center justify-between pb-6 mb-8 border-b border-slate-800 gap-4">
     <div class="flex items-center gap-3">
       <div class="w-11 h-11 rounded-xl bg-emerald-950 border border-emerald-400 flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.4)]">
-        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z"></path></svg>
+        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z"></path>
+        </svg>
       </div>
       <div>
-        <h1 class="text-lg font-black tracking-wider text-white uppercase">SENTINEL AI <span class="text-emerald-400 text-xs font-mono font-normal">v2.4 THREAT INTEL</span></h1>
-        <p class="text-[11px] text-slate-400 tracking-wider font-mono">AUTONOMOUS CYBER THREAT DETECTION & OSINT ENRICHMENT</p>
+        <h1 class="text-lg font-black tracking-wider text-white uppercase">
+          SENTINEL AI <span class="text-emerald-400 text-xs font-mono font-normal">v2.4 THREAT INTEL</span>
+        </h1>
+        <p class="text-[11px] text-slate-400 tracking-wider font-mono">
+          AUTONOMOUS CYBER THREAT DETECTION & OSINT ENRICHMENT
+        </p>
       </div>
     </div>
 
-    <!-- Live Status, Controls & Logout -->
     <div class="flex items-center gap-4">
       <div class="px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-950/30 flex items-center gap-2">
         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
@@ -54,33 +62,175 @@
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
     <div class="glass-card p-4 rounded-xl">
       <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Active Incursions</p>
-      <p id="activeThreatsCount" class="text-2xl font-black text-rose-400 mt-1">6 <span class="text-xs text-rose-500 font-normal">In Progress</span></p>
+      <p id="activeThreatsCount" class="text-2xl font-black text-rose-400 mt-1">
+        6 <span class="text-xs text-rose-500 font-normal">In Progress</span>
+      </p>
     </div>
+
     <div class="glass-card p-4 rounded-xl">
-      <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">AI Classification Accuracy</p>
-      <p class="text-2xl font-black text-emerald-400 mt-1">99.4% <span class="text-xs text-slate-400 font-normal">Ensemble XGBoost</span></p>
+      <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">ML Model</p>
+      <p class="text-2xl font-black text-emerald-400 mt-1">
+        Random Forest
+        <span class="text-xs text-slate-400 font-normal">API Connected on Demand</span>
+      </p>
     </div>
+
     <div class="glass-card p-4 rounded-xl">
-      <p id="livePacketRate" class="text-2xl font-black text-cyan-400 mt-1">14,820 <span class="text-xs text-slate-400 font-normal">Live Telemetry</span></p>
+      <p id="livePacketRate" class="text-2xl font-black text-cyan-400 mt-1">
+        14,820 <span class="text-xs text-slate-400 font-normal">Live Telemetry</span>
+      </p>
       <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Packets Inspected / Sec</p>
     </div>
+
     <div class="glass-card p-4 rounded-xl">
       <p class="text-[11px] uppercase font-bold text-slate-400 font-mono">Blocked Adversaries</p>
-      <p id="blockedCount" class="text-2xl font-black text-amber-400 mt-1">0 <span class="text-xs text-slate-400 font-normal">IPs Contained</span></p>
+      <p id="blockedCount" class="text-2xl font-black text-amber-400 mt-1">
+        0 <span class="text-xs text-slate-400 font-normal">IPs Contained</span>
+      </p>
     </div>
   </div>
+
+  <!-- Random Forest ML Prediction Panel -->
+  <section class="glass-card rounded-2xl p-6 mb-8">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-base font-bold text-white">Random Forest Network Traffic Prediction</h2>
+        <p class="text-xs text-slate-400 font-mono mt-1">
+          Submit the 78 trained network-flow features to the authenticated ML API
+        </p>
+      </div>
+      <span class="text-[10px] uppercase tracking-wider text-emerald-300 border border-emerald-500/30 rounded px-2 py-1">
+        Backend ML API
+      </span>
+    </div>
+
+    <p class="text-xs text-slate-400 mb-3">
+      Paste a JSON object containing all 78 feature names exactly as shown.
+      Replace null values with numeric measurements from a real network-flow record
+      for a meaningful prediction. Nulls are accepted by the model pipeline but
+      do not represent real traffic.
+    </p>
+
+    <label for="mlFeaturesInput" class="block text-xs text-slate-300 font-mono mb-2">
+      Network traffic features (JSON)
+    </label>
+
+    <textarea id="mlFeaturesInput" spellcheck="false"
+      class="w-full min-h-[260px] rounded-lg border border-slate-700 bg-slate-950 text-slate-200 p-3 text-xs font-mono focus:outline-none focus:border-emerald-500"
+      style="resize:vertical">{
+  "Destination Port": null,
+  "Flow Duration": null,
+  "Total Fwd Packets": null,
+  "Total Backward Packets": null,
+  "Total Length of Fwd Packets": null,
+  "Total Length of Bwd Packets": null,
+  "Fwd Packet Length Max": null,
+  "Fwd Packet Length Min": null,
+  "Fwd Packet Length Mean": null,
+  "Fwd Packet Length Std": null,
+  "Bwd Packet Length Max": null,
+  "Bwd Packet Length Min": null,
+  "Bwd Packet Length Mean": null,
+  "Bwd Packet Length Std": null,
+  "Flow Bytes/s": null,
+  "Flow Packets/s": null,
+  "Flow IAT Mean": null,
+  "Flow IAT Std": null,
+  "Flow IAT Max": null,
+  "Flow IAT Min": null,
+  "Fwd IAT Total": null,
+  "Fwd IAT Mean": null,
+  "Fwd IAT Std": null,
+  "Fwd IAT Max": null,
+  "Fwd IAT Min": null,
+  "Bwd IAT Total": null,
+  "Bwd IAT Mean": null,
+  "Bwd IAT Std": null,
+  "Bwd IAT Max": null,
+  "Bwd IAT Min": null,
+  "Fwd PSH Flags": null,
+  "Bwd PSH Flags": null,
+  "Fwd URG Flags": null,
+  "Bwd URG Flags": null,
+  "Fwd Header Length": null,
+  "Bwd Header Length": null,
+  "Fwd Packets/s": null,
+  "Bwd Packets/s": null,
+  "Min Packet Length": null,
+  "Max Packet Length": null,
+  "Packet Length Mean": null,
+  "Packet Length Std": null,
+  "Packet Length Variance": null,
+  "FIN Flag Count": null,
+  "SYN Flag Count": null,
+  "RST Flag Count": null,
+  "PSH Flag Count": null,
+  "ACK Flag Count": null,
+  "URG Flag Count": null,
+  "CWE Flag Count": null,
+  "ECE Flag Count": null,
+  "Down/Up Ratio": null,
+  "Average Packet Size": null,
+  "Avg Fwd Segment Size": null,
+  "Avg Bwd Segment Size": null,
+  "Fwd Header Length.1": null,
+  "Fwd Avg Bytes/Bulk": null,
+  "Fwd Avg Packets/Bulk": null,
+  "Fwd Avg Bulk Rate": null,
+  "Bwd Avg Bytes/Bulk": null,
+  "Bwd Avg Packets/Bulk": null,
+  "Bwd Avg Bulk Rate": null,
+  "Subflow Fwd Packets": null,
+  "Subflow Fwd Bytes": null,
+  "Subflow Bwd Packets": null,
+  "Subflow Bwd Bytes": null,
+  "Init_Win_bytes_forward": null,
+  "Init_Win_bytes_backward": null,
+  "act_data_pkt_fwd": null,
+  "min_seg_size_forward": null,
+  "Active Mean": null,
+  "Active Std": null,
+  "Active Max": null,
+  "Active Min": null,
+  "Idle Mean": null,
+  "Idle Std": null,
+  "Idle Max": null,
+  "Idle Min": null
+}</textarea>
+
+    <div class="flex flex-wrap items-center gap-3 mt-4">
+      <button id="mlPredictButton" onclick="predictNetworkThreat()"
+        class="px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition">
+        Run ML Prediction
+      </button>
+      <span id="mlPredictionStatus" role="status" aria-live="polite" class="text-xs text-slate-400">
+        Waiting for network-flow input.
+      </span>
+    </div>
+
+    <div id="mlPredictionResult" class="hidden mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4" aria-live="polite">
+      <p class="text-[10px] uppercase tracking-wider text-slate-400 font-mono">Random Forest result</p>
+      <div class="flex flex-wrap items-baseline gap-3 mt-2">
+        <strong id="mlPredictionLabel" class="text-2xl font-black">—</strong>
+        <span id="mlPredictionConfidence" class="text-sm text-slate-300 font-mono"></span>
+      </div>
+      <p id="mlPredictionCode" class="text-xs text-slate-500 mt-2"></p>
+    </div>
+  </section>
 
   <!-- Real-Time AI Threat Feed Table -->
   <div class="glass-card rounded-2xl p-6">
     <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
       <div>
         <h2 class="text-base font-bold text-white flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span> Live Threat Feed with OSINT Threat Intelligence
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          Live Threat Feed with OSINT Threat Intelligence
         </h2>
-        <p class="text-xs text-slate-400 font-mono">Adversary IP geo-enrichment, ASN infrastructure detection & AI risk scoring</p>
+        <p class="text-xs text-slate-400 font-mono">
+          Adversary IP geo-enrichment, ASN infrastructure detection & AI risk scoring
+        </p>
       </div>
 
-      <!-- Action Buttons for Viva Demo -->
       <div class="flex items-center gap-3">
         <button onclick="injectSimulatedAttack()" class="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg shadow-lg shadow-rose-950 transition flex items-center gap-1.5">
           <span>⚡</span> Inject Live Attack (Demo)
@@ -92,7 +242,6 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse text-xs">
         <thead>
@@ -119,16 +268,20 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
+
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
         gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.2);
-      } catch (e) { /* Audio bypass */ }
+      } catch (e) {
+        /* Audio bypass */
+      }
     }
 
     // Threats with Full Threat Intelligence Metadata
@@ -228,7 +381,6 @@
     let totalBlocked = 0;
     let eventCounter = 8028;
 
-    // Pool of realistic adversarial threat intel feeds
     const attackPool = [
       { type: "Ransomware C2 Beaconing", port: "Port 8443 (Custom)", sev: "CRITICAL", country: "Russia", flag: "🇷🇺", isp: "Selectel Cloud", infra: "C2 Server", risk: 99 },
       { type: "Kerberos Ticket Stuffing", port: "Port 88 (Kerberos)", sev: "HIGH", country: "Romania", flag: "🇷🇴", isp: "Voxility Network", infra: "Anonymous Proxy", risk: 91 },
@@ -245,15 +397,20 @@
       tbody.innerHTML = '';
 
       threats.forEach((t, index) => {
-        const severityColor = t.severity === 'CRITICAL' ? 'text-rose-400 bg-rose-950/40 border-rose-800' :
-                              t.severity === 'HIGH' ? 'text-orange-400 bg-orange-950/40 border-orange-800' :
-                              t.severity === 'MEDIUM' ? 'text-amber-400 bg-amber-950/40 border-amber-800' :
-                              'text-emerald-400 bg-emerald-950/40 border-emerald-800';
+        const severityColor =
+          t.severity === 'CRITICAL' ? 'text-rose-400 bg-rose-950/40 border-rose-800' :
+          t.severity === 'HIGH' ? 'text-orange-400 bg-orange-950/40 border-orange-800' :
+          t.severity === 'MEDIUM' ? 'text-amber-400 bg-amber-950/40 border-amber-800' :
+          'text-emerald-400 bg-emerald-950/40 border-emerald-800';
 
-        const riskColor = t.risk >= 90 ? 'text-rose-400' : t.risk >= 80 ? 'text-amber-400' : 'text-emerald-400';
+        const riskColor =
+          t.risk >= 90 ? 'text-rose-400' :
+          t.risk >= 80 ? 'text-amber-400' :
+          'text-emerald-400';
 
         const tr = document.createElement('tr');
         tr.className = `hover:bg-slate-900/60 transition ${index === 0 ? 'new-threat-anim' : ''}`;
+
         tr.innerHTML = `
           <td class="py-3 px-3 text-slate-400">${t.id}</td>
           <td class="py-3 px-3 font-bold text-white font-sans">${t.type}</td>
@@ -262,33 +419,42 @@
             <div class="flex items-center gap-2">
               <span class="text-base">${t.flag}</span>
               <div>
-                <p class="font-sans font-semibold text-slate-200">${t.country} <span class="text-[10px] font-mono ${riskColor}">Risk: ${t.risk}/100</span></p>
-                <p class="text-[10px] text-indigo-300 font-mono">${t.isp} • <span class="text-slate-400">${t.infra}</span></p>
+                <p class="font-sans font-semibold text-slate-200">
+                  ${t.country}
+                  <span class="text-[10px] font-mono ${riskColor}">Risk: ${t.risk}/100</span>
+                </p>
+                <p class="text-[10px] text-indigo-300 font-mono">
+                  ${t.isp} • <span class="text-slate-400">${t.infra}</span>
+                </p>
               </div>
             </div>
           </td>
           <td class="py-3 px-3 text-slate-400 font-sans">${t.target_port}</td>
           <td class="py-3 px-3">
-            <span class="px-2 py-0.5 rounded border text-[9px] font-bold ${severityColor}">${t.severity}</span>
+            <span class="px-2 py-0.5 rounded border text-[9px] font-bold ${severityColor}">
+              ${t.severity}
+            </span>
           </td>
           <td class="py-3 px-3 text-emerald-400 font-bold">${t.ai_confidence}</td>
           <td class="py-3 px-3 text-right">
-            ${t.status === 'Active' ? 
-              `<button onclick="blockAttacker('${t.source_ip}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-sans text-[11px] font-bold transition shadow-md shadow-rose-950">
-                Block IP
-              </button>` : 
-              `<span class="text-slate-500 text-[11px] font-sans">Contained</span>`
+            ${t.status === 'Active'
+              ? `<button onclick="blockAttacker('${t.source_ip}')"
+                  class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-sans text-[11px] font-bold transition shadow-md shadow-rose-950">
+                  Block IP
+                </button>`
+              : `<span class="text-slate-500 text-[11px] font-sans">Contained</span>`
             }
           </td>
         `;
+
         tbody.appendChild(tr);
       });
 
       const activeCount = threats.filter(t => t.status === 'Active').length;
-      document.getElementById('activeThreatsCount').innerHTML = `${activeCount} <span class="text-xs text-rose-500 font-normal">In Progress</span>`;
+      document.getElementById('activeThreatsCount').innerHTML =
+        `${activeCount} <span class="text-xs text-rose-500 font-normal">In Progress</span>`;
     }
 
-    // Dynamic New Threat Generator
     function pushNewThreat(custom = null) {
       const template = custom || attackPool[Math.floor(Math.random() * attackPool.length)];
       const conf = (91 + Math.random() * 8.5).toFixed(1) + "%";
@@ -316,7 +482,6 @@
       renderThreats();
     }
 
-    // Viva Demo Button: Injects Nation-State Level Attack
     function injectSimulatedAttack() {
       pushNewThreat({
         type: "🚨 APT-29 State Infiltration (Zero-Day)",
@@ -328,21 +493,142 @@
         infra: "Advanced Persistent Threat",
         risk: 99
       });
+
       document.getElementById('livePacketRate').innerText = "49,120";
+
       setTimeout(() => {
         document.getElementById('livePacketRate').innerText = "14,820";
       }, 2500);
     }
 
     function blockAttacker(ip) {
-      threats = threats.map(t => t.source_ip === ip ? { ...t, status: 'Blocked' } : t);
+      threats = threats.map(t =>
+        t.source_ip === ip ? { ...t, status: 'Blocked' } : t
+      );
+
       totalBlocked++;
-      document.getElementById('blockedCount').innerHTML = `${totalBlocked} <span class="text-xs text-slate-400 font-normal">IPs Contained</span>`;
+
+      document.getElementById('blockedCount').innerHTML =
+        `${totalBlocked} <span class="text-xs text-slate-400 font-normal">IPs Contained</span>`;
+
       alert(`ACTIVE RESPONSE TRIGGERED:\nAdversary IP ${ip} has been isolated and dropped from boundary routing.`);
       renderThreats();
     }
 
-    // Authenticate the user before displaying the dashboard
+    // Protected Random Forest prediction endpoint.
+    async function predictNetworkThreat() {
+      const token = sessionStorage.getItem("token");
+      const input = document.getElementById("mlFeaturesInput");
+      const button = document.getElementById("mlPredictButton");
+      const status = document.getElementById("mlPredictionStatus");
+      const resultBox = document.getElementById("mlPredictionResult");
+
+      resultBox.classList.add("hidden");
+
+      if (!token) {
+        status.textContent = "Your session has expired. Please log in again.";
+        window.location.replace("/");
+        return;
+      }
+
+      let parsed;
+
+      try {
+        parsed = JSON.parse(input.value);
+      } catch (error) {
+        status.textContent = "Invalid JSON. Check commas, quotation marks, and braces.";
+        return;
+      }
+
+      // FIX: Accept both supported JSON formats:
+      // 1. Direct object containing all feature names.
+      // 2. Wrapped object: { "features": { ...78 features... } }
+      const features = parsed?.features ?? parsed;
+
+      if (
+        !features ||
+        typeof features !== "object" ||
+        Array.isArray(features)
+      ) {
+        status.textContent = "Input must be a JSON object containing the 78 traffic features.";
+        return;
+      }
+
+      // Prevent accidentally sending the wrapper as a feature.
+      if (Object.prototype.hasOwnProperty.call(features, "features")) {
+        status.textContent = "Invalid input: remove the extra nested 'features' property.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Sending traffic features to the Random Forest model...";
+
+      try {
+        const response = await fetch("/api/ml/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ features: features }),
+          cache: "no-store"
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+          sessionStorage.clear();
+          window.location.replace("/");
+          return;
+        }
+
+        if (!response.ok) {
+          status.textContent =
+            typeof data.detail === "string"
+              ? data.detail
+              : `Prediction request failed (HTTP ${response.status}).`;
+          return;
+        }
+
+        if (
+          !data.result ||
+          !["BENIGN", "ATTACK"].includes(data.result.prediction)
+        ) {
+          status.textContent = "The API response did not contain a recognized prediction.";
+          return;
+        }
+
+        const prediction = data.result.prediction;
+        const confidence = Number(data.result.confidence);
+
+        document.getElementById("mlPredictionLabel").textContent = prediction;
+
+        document.getElementById("mlPredictionLabel").className =
+          `text-2xl font-black ${
+            prediction === "ATTACK" ? "text-rose-400" : "text-emerald-400"
+          }`;
+
+        document.getElementById("mlPredictionConfidence").textContent =
+          Number.isFinite(confidence)
+            ? `Confidence: ${(confidence * 100).toFixed(2)}%`
+            : "Confidence unavailable";
+
+        document.getElementById("mlPredictionCode").textContent =
+          `Prediction code: ${data.result.prediction_code} • Model: ${data.model || "Random Forest"}`;
+
+        resultBox.classList.remove("hidden");
+        status.textContent = "Prediction completed successfully.";
+
+      } catch (error) {
+        console.error("ML prediction request failed:", error);
+        status.textContent =
+          "Could not reach the ML API. Check that the backend server is running.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // Authenticate user before displaying the dashboard.
     async function initializeDashboard() {
       const token = sessionStorage.getItem("token");
 
@@ -379,21 +665,18 @@
         document.getElementById("analystRole").textContent =
           `ROLE: ${profile.role.toUpperCase()}`;
 
-        // Show dashboard content only after authentication succeeds
         document.body.style.visibility = "visible";
 
-        // Start dashboard rendering and simulations only after authentication
         renderThreats();
 
-        // Live Telemetry Fluctuation
         setInterval(() => {
           const base = 14500;
           const flux = Math.floor(Math.random() * 800) - 400;
+
           document.getElementById("livePacketRate").innerText =
             (base + flux).toLocaleString();
         }, 1200);
 
-        // Stream new threat every 7 seconds
         setInterval(pushNewThreat, 7000);
 
       } catch (error) {
@@ -403,8 +686,7 @@
       }
     }
 
-    // Revalidate authentication whenever the browser restores this page
-    // from its Back/Forward cache. Keep the dashboard hidden until verified.
+    // Revalidate authentication when browser restores page from Back/Forward cache.
     window.addEventListener("pageshow", async function(event) {
       if (!event.persisted) {
         return;
