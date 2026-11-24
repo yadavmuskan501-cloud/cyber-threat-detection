@@ -1,3 +1,4 @@
+import os
 import json
 import uuid
 import pytest
@@ -6,7 +7,26 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
 
-BASE_URL = "http://127.0.0.1:8000"
+# Always use the dedicated testing environment.
+os.environ["SENTINEL_ENV"] = "test"
+
+BASE_URL = "http://127.0.0.1:8001"
+
+
+def pytest_sessionstart(session):
+    """Prevent automated tests from using application data."""
+
+    from database import db, init_database
+
+    if db.name != "sentinelai_test":
+        pytest.exit(
+            "Unsafe database detected. Testing stopped.",
+            returncode=1
+        )
+
+    init_database()
+
+    print("\nTest database verified:", db.name)
 
 
 @pytest.fixture(scope="session")
@@ -40,7 +60,7 @@ def test_account():
 
     except URLError as error:
         pytest.fail(
-            f"Cannot connect to Sentinel AI server: {error}"
+            f"Cannot connect to Sentinel AI test server: {error}"
         )
 
     return credentials
