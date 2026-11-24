@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from urllib.parse import quote_plus
 from dotenv import load_dotenv
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -26,9 +26,11 @@ client = MongoClient(
 db = client[db_name]
 
 users_collection = db["users"]
+counters_collection = db["counters"]
 
 
 def init_database():
+
     users_collection.create_index(
         "username", unique=True
     )
@@ -36,3 +38,33 @@ def init_database():
     users_collection.create_index(
         "email", unique=True
     )
+
+    users_collection.create_index(
+        "id", unique=True
+    )
+
+    latest_user = users_collection.find_one(
+        {},
+        {"id": 1},
+        sort=[("id", -1)]
+    )
+
+    max_id = latest_user["id"] if latest_user else 0
+
+    counters_collection.update_one(
+        {"_id": "users"},
+        {"$max": {"sequence": max_id}},
+        upsert=True
+    )
+
+
+def get_next_user_id():
+
+    counter = counters_collection.find_one_and_update(
+        {"_id": "users"},
+        {"$inc": {"sequence": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+
+    return counter["sequence"]
