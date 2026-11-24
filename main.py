@@ -74,10 +74,10 @@ Protected endpoints require a valid JWT access token.
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -85,10 +85,14 @@ app.add_middleware(
 
 # Set SENTINEL_SECRET_KEY in the environment for real deployments.
 # The fallback preserves compatibility with existing development tokens.
-SECRET_KEY = os.getenv(
-    "SENTINEL_SECRET_KEY",
-    "SENTINEL_AI_CRYPTO_SECRET_KEY_9942_NEVER_SHARE"
-)
+from database import config as secure_config
+
+SECRET_KEY = secure_config.get("SENTINEL_SECRET_KEY")
+
+if not SECRET_KEY or len(SECRET_KEY) < 32:
+    raise RuntimeError(
+        "SENTINEL_SECRET_KEY must be configured securely."
+    )
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120

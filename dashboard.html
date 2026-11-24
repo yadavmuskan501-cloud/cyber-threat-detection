@@ -392,7 +392,14 @@
       return `${Math.floor(Math.random() * 180 + 20)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 250 + 1)}`;
     }
 
-    function renderThreats() {
+    
+function escapeThreatText(value) {
+  const element = document.createElement('div');
+  element.textContent = String(value ?? '');
+  return element.innerHTML;
+}
+
+function renderThreats() {
       const tbody = document.getElementById('threatTable');
       tbody.innerHTML = '';
 
@@ -412,33 +419,33 @@
         tr.className = `hover:bg-slate-900/60 transition ${index === 0 ? 'new-threat-anim' : ''}`;
 
         tr.innerHTML = `
-          <td class="py-3 px-3 text-slate-400">${t.id}</td>
-          <td class="py-3 px-3 font-bold text-white font-sans">${t.type}</td>
-          <td class="py-3 px-3 text-cyan-400 font-bold">${t.source_ip}</td>
+          <td class="py-3 px-3 text-slate-400">${escapeThreatText(t.id)}</td>
+          <td class="py-3 px-3 font-bold text-white font-sans">${escapeThreatText(t.type)}</td>
+          <td class="py-3 px-3 text-cyan-400 font-bold">${escapeThreatText(t.source_ip)}</td>
           <td class="py-3 px-3">
             <div class="flex items-center gap-2">
-              <span class="text-base">${t.flag}</span>
+              <span class="text-base">${escapeThreatText(t.flag)}</span>
               <div>
                 <p class="font-sans font-semibold text-slate-200">
-                  ${t.country}
-                  <span class="text-[10px] font-mono ${riskColor}">Risk: ${t.risk}/100</span>
+                  ${escapeThreatText(t.country)}
+                  <span class="text-[10px] font-mono ${riskColor}">Risk: ${escapeThreatText(t.risk)}/100</span>
                 </p>
                 <p class="text-[10px] text-indigo-300 font-mono">
-                  ${t.isp} • <span class="text-slate-400">${t.infra}</span>
+                  ${escapeThreatText(t.isp)} • <span class="text-slate-400">${escapeThreatText(t.infra)}</span>
                 </p>
               </div>
             </div>
           </td>
-          <td class="py-3 px-3 text-slate-400 font-sans">${t.target_port}</td>
+          <td class="py-3 px-3 text-slate-400 font-sans">${escapeThreatText(t.target_port)}</td>
           <td class="py-3 px-3">
             <span class="px-2 py-0.5 rounded border text-[9px] font-bold ${severityColor}">
-              ${t.severity}
+              ${escapeThreatText(t.severity)}
             </span>
           </td>
-          <td class="py-3 px-3 text-emerald-400 font-bold">${t.ai_confidence}</td>
+          <td class="py-3 px-3 text-emerald-400 font-bold">${escapeThreatText(t.ai_confidence)}</td>
           <td class="py-3 px-3 text-right">
             ${t.status === 'Active'
-              ? `<button onclick="blockAttacker('${t.source_ip}')"
+              ? `<button data-action="block-ip"
                   class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-sans text-[11px] font-bold transition shadow-md shadow-rose-950">
                   Block IP
                 </button>`
@@ -447,7 +454,17 @@
           </td>
         `;
 
+        
+        const blockButton = tr.querySelector('[data-action="block-ip"]');
+
+        if (blockButton) {
+          blockButton.addEventListener('click', () => {
+            blockAttacker(t.source_ip);
+          });
+        }
+
         tbody.appendChild(tr);
+
       });
 
       const activeCount = threats.filter(t => t.status === 'Active').length;
