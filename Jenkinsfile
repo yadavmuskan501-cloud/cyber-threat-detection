@@ -87,7 +87,7 @@ pipeline {
             steps {
                 withCredentials([
                     file(
-                        credentialsId: 'sentinel-mongodb-test-env',
+                        credentialsId: 'sentinel_mongodb_test',
                         variable: 'MONGODB_TEST_ENV_FILE'
                     )
                 ]) {
@@ -96,6 +96,12 @@ pipeline {
                             echo 'Checking port 8001 before starting test server...'
 
                             powershell '''
+                                $ErrorActionPreference = 'Stop'
+
+                                if (Test-Path 'test-results.xml') {
+                                    Remove-Item 'test-results.xml' -Force
+                                }
+
                                 $existing = Get-NetTCPConnection `
                                     -LocalPort 8001 `
                                     -State Listen `
@@ -108,6 +114,14 @@ pipeline {
                                 if (Test-Path '.jenkins-server.pid') {
                                     Remove-Item '.jenkins-server.pid' -Force
                                 }
+                            '''
+
+                            echo 'Validating MongoDB test configuration...'
+
+                            bat '''
+                                @echo off
+                                ".jenkins-venv\\Scripts\\python.exe" -c "from database import db, init_database; assert db.name == 'sentinelai_test'; init_database(); print('SUCCESS: MongoDB test database verified')"
+                                if errorlevel 1 exit /b 1
                             '''
 
                             echo 'Starting temporary Sentinel AI FastAPI server...'
@@ -241,6 +255,8 @@ pipeline {
                 bat '''
                     @echo off
 
+                    if exist .env.test exit /b 1
+                    if exist .env exit /b 1
                     "%DOCKER_BIN%\\docker.exe" build -t sentinel-ai:jenkins .
                     if errorlevel 1 exit /b 1
 
