@@ -7,3 +7,5 @@ joblib
 scikit-learn
 numpy
 pandas
+pymongo==4.20.1
+python-dotenv==1.2.4
