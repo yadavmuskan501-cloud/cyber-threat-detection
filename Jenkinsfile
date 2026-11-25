@@ -2,12 +2,12 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_BIN = 'C:\\Users\\cpulk\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
-        PYTHON_EXE = 'C:\\Users\\cpulk\\AppData\\Local\\Python\\pythoncore-3.12-64\\python.exe'
-        HEADLESS = '1'
-        SENTINEL_ENV = 'test'
-    }
+   environment {
+    DOCKER_BIN = "${env.SENTINEL_DOCKER_BIN ?: 'C:\\Users\\cpulk\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'}"
+    PYTHON_EXE = "${env.SENTINEL_PYTHON_EXE ?: 'C:\\Users\\cpulk\\AppData\\Local\\Python\\pythoncore-3.12-64\\python.exe'}"
+    HEADLESS = '1'
+    SENTINEL_ENV = 'test'
+}
 
     options {
         timestamps()
